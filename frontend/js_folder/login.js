@@ -1,4 +1,3 @@
-// require 대신 import 사용
 import * as passwordValidation from '../modules/passwordValidation.js';
 const container = document.querySelector('.container');
 const registerBtn = document.querySelector('.register-btn');
@@ -49,7 +48,7 @@ loginForm.addEventListener('submit', async function(e) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                username: username,
+                email: username,
                 password: password
             })
         });
@@ -60,7 +59,7 @@ loginForm.addEventListener('submit', async function(e) {
         if(data.success) {
             // 로그인 성공
             alert('로그인 성공!');
-            window.location.href = '/main';
+            window.location.href = '/'; 
         } else {
             // 로그인 실패
             alert(data.message);
