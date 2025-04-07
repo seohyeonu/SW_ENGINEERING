@@ -23,13 +23,43 @@ body {
     padding:1rem;
 }
 
-.headLine button{
-    font-size: 2rem;
+.headLine-login-btn{
+    margin-top: 10px;
+    position: absolute;
+    font-size: 2.1rem;
     font-weight: bold;
     background: transparent;
-    border:0;
+    border: none;
     cursor: pointer;
-    color:white; 
+    color: white;
+    transform: translateX(0%);
+    transition: transform 0.8s ease-in-out, opacity 0.6s ease-in-out;
+    opacity: 1;
+}
+
+.headLine-login-btn.move-right {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.headLine-register-btn{
+    margin-top: 10px;
+    right: 20px;
+    position: absolute;
+    font-size: 2.1rem;
+    font-weight: bold;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: white;
+    transform: translateX(150%);
+    transition: transform 0.8s ease-in-out, opacity 0.6s ease-in-out;
+    opacity: 0;
+}
+
+.headLine-register-btn.move-left {
+    transform: translateX(0%);
+    opacity: 1;
 }
 
 .container {

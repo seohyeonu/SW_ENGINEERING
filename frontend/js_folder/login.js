@@ -2,16 +2,21 @@ import * as passwordValidation from '../modules/passwordValidation.js';
 const container = document.querySelector('.container');
 const registerBtn = document.querySelector('.register-btn');
 const loginBtn = document.querySelector('.login-btn');
+const headshiftRightBtn = document.querySelector('.headLine-login-btn');
+const headshiftLeftBtn = document.querySelector('.headLine-register-btn');
 
 
 registerBtn.addEventListener('click', () => {
     container.classList.add('active');
+    headshiftRightBtn.classList.add('move-right');
+    headshiftLeftBtn.classList.add('move-left');
 })
 
 loginBtn.addEventListener('click', () => {
     container.classList.remove('active');
+    headshiftRightBtn.classList.remove('move-right');
+    headshiftLeftBtn.classList.remove('move-left');
 })
-
 
 
 // 로그인 폼 제출 이벤트(프론트 -> 서버로 요청)

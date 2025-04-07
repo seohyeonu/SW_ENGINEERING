@@ -16,6 +16,38 @@ a, a:link, a:visited {
 .container{
     width:1980px;
     margin:0 auto;
+
+    h1 button{
+        font-size: 2.3rem;
+    }
+}
+
+.block {
+    margin-top: 8px;
+    font-size: 0.5rem;
+}
+
+.menu {
+    color: #fff;
+    padding: 0.5rem;
+    position: relative;
+}
+
+.menu::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: #fff;
+    border-radius: 5px;
+    transform: scaleX(0);
+    transition: all .3s ease;
+    bottom: 0;
+    left: 0;
+}
+
+.menu:hover::before {
+    transform: scaleX(1);
 }
 
 header{
@@ -97,6 +129,80 @@ main .container {
     p {
         color: rgb(202, 202, 202);
         font-size:1rem;
+    }
+}
+
+footer {
+    background-color: #111;
+    color: white;
+    
+    .container {
+        max-width: 1250px;
+        margin: 0 auto;
+        padding: 30px 40px 40px 40px;
+    }
+
+    .logo_text {
+        button{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+
+            border: none;
+            background-color: #111;
+            color: white;
+        }
+
+        i {
+            font-size: 24px;
+        }
+    }
+
+    ul {
+        margin-left: 100px;
+        display: flex;
+        gap: 100px;
+        margin-bottom: 30px;
+
+        h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        button {
+            background-color: white;
+            color: #111;
+
+            margin-left: 50px;
+            margin-top: 5px;
+            padding: 15px;
+            border-radius: 7px;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #111;
+            color: white;
+            border: 2px solid white;
+        }
+
+        hr {
+            max-width: 30px;
+        }
+    }
+
+    .copyright_text button{
+        margin-left: 3px;
+        font-size: 0.9rem;
+
+        border: none;
+        background-color: #111;
+        color: white;
+    }
+
+    .copyright_text {
+        font-size: 0.8rem;
     }
 }
 
