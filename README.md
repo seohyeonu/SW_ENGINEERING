@@ -1,7 +1,8 @@
 # WIFFLE 협업 웹사이트 프로젝트
 
-React (Vite) + Express 기반의 협업 웹 애플리케이션 프로젝트입니다.  
-프론트엔드는 Vite 기반 React로 구성되어 있으며, 백엔드는 Node.js + javascript를 사용합니다.
+React (Vite) + Node.js 기반의 협업 웹 애플리케이션 프로젝트입니다.  
+프론트엔드는 Vite 기반 React로 구성되어 있으며,  
+백엔드는 Node.js 환경에서 JavaScript로 작성되었습니다.
 
 ---
 
@@ -9,7 +10,7 @@ React (Vite) + Express 기반의 협업 웹 애플리케이션 프로젝트입�
 
 ```
 project-root/
-├── backend/                # 백엔드 서버 (Express)
+├── backend/                # 백엔드 서버 (Node.js)
 │   ├── package.json
 │   ├── .env
 │   └── node_modules/
@@ -38,7 +39,7 @@ npm install
 npm run start
 ```
 
-> 백엔드는 Express 서버로 동작하며, 포트와 환경변수는 `.env` 파일로 관리됩니다.
+> 백엔드는 Node.js 서버로 동작하며, 포트와 환경변수는 `.env` 파일로 관리됩니다.
 
 ---
 
@@ -58,7 +59,7 @@ npm run start
 각 디렉토리에는 독립적인 `package.json`이 있으며, 서로 다른 종속성을 관리합니다.
 
 - 프론트: `React`, `Vite`, `styled-components`, `antd` 등
-- 백엔드: `Express`, `CORS`, `dotenv`, `mongoose` 등 (예상)
+- 백엔드: `Node.js`, `dotenv`, `fs`, `http`, 기타 내장/외부 모듈
 
 ---
 
