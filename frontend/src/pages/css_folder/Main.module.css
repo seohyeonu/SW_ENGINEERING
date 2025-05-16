@@ -1,0 +1,241 @@
+/* reset용 클래스 */
+.reset {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.listReset {
+  list-style: none;
+}
+
+.linkReset {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 컨테이너 */
+.container {
+  width: 1980px;
+  margin: 0 auto;
+}
+
+.header {
+  position: fixed;
+  color: white;
+  top: 0;
+  z-index: 3;
+  width: 100%;
+  padding: 1rem;
+  font-family: "Poppins", sans-serif;
+}
+
+.headerContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.navList {
+  display: flex;
+}
+
+.navItem {
+  padding: 10px;
+}
+
+.headerButton {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: white;
+  font-family: "Poppins", sans-serif;
+}
+
+.titleButton {
+  font-size: 2.1rem;
+  font-weight: bold;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: white;
+  transform: translateX(0%);
+  transition: transform 0.8s ease-in-out, opacity 0.6s ease-in-out;
+  opacity: 1;
+  font-family: "Poppins", sans-serif;
+}
+
+.titleButton:hover,
+.titleButton:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.block {
+  margin-top: 1.4rem;
+  font-size: 0.8rem;
+}
+
+.menu {
+  color: #fff;
+  padding: 0.5rem 1rem;
+  position: relative;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.0);
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  outline: none;
+  font-family: "Poppins", sans-serif;
+}
+
+.menu:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.menu:hover {
+  border: 1px solid rgba(255, 255, 255, 0.0);
+}
+
+.menu::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: #fff;
+  border-radius: 5px;
+  transform: scaleX(0);
+  transition: all 0.3s ease;
+  bottom: 0;
+  left: 0;
+}
+
+.menu:hover::before {
+  transform: scaleX(1);
+}
+
+.main {
+  width: 100%;
+  height: 100vh;
+  color: white;
+  background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), 
+  url('https://cms.boardmix.com/images/kr/articles/2022/reviews/white-board-sites2.png') center center;
+  background-size: contain;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.mainContainer p,
+.mainContainer h1,
+.mainContainer h3 {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+.mainContainer h1 {
+  font-size: 2rem;
+}
+
+.mainContainer p {
+  color: rgb(202, 202, 202);
+  font-size: 1rem;
+}
+
+.activeText {
+  color: rgb(0, 162, 255);
+  min-height: 32px;
+  display: block;
+}
+
+.mouse {
+  background-color: transparent;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: upDown 1s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.footer {
+  background-color: #111;
+  color: white;
+}
+
+.footerContainer {
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 30px 40px 40px 40px;
+}
+
+.logo_text button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  border: none;
+  background-color: #111;
+  color: white;
+}
+
+.logo_text i {
+  font-size: 24px;
+}
+
+.footerMenu {
+  margin-left: 100px;
+  display: flex;
+  gap: 100px;
+  margin-bottom: 30px;
+}
+
+.footerMenu h3 {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.footerMenu button {
+  background-color: white;
+  color: #111;
+  margin-left: 50px;
+  margin-top: 5px;
+  padding: 15px;
+  border-radius: 7px;
+  border: 2px solid white;
+}
+
+.footerMenu button:hover {
+  background-color: #111;
+  color: white;
+  border: 2px solid white;
+}
+
+.footerMenu hr {
+  max-width: 30px;
+}
+
+.copyright_text {
+  font-size: 0.8rem;
+}
+
+.copyright_text button {
+  margin-left: 3px;
+  font-size: 0.9rem;
+  border: none;
+  background-color: #111;
+  color: white;
+}
+
+@keyframes upDown {
+  0% { bottom: 1rem; }
+  50% { bottom: 1.5rem; }
+  100% { bottom: 1rem; }
+}
