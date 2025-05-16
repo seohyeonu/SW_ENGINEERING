@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # SW_ENGINEERING
 CWNU SW_ENGINEERING TEAM_PROJECT
 =======
@@ -74,4 +73,3 @@ npm run start
 - 환경변수는 `.env.example` 파일을 참고하여 `.env` 파일을 작성하세요.
 
 ---
->>>>>>> origin/future_direction
