@@ -1,6 +1,3 @@
-# SW_ENGINEERING
-CWNU SW_ENGINEERING TEAM_PROJECT
-=======
 # WIFFLE 협업 웹사이트 프로젝트
 
 React (Vite) + Node.js 기반의 협업 웹 애플리케이션 프로젝트입니다.  
