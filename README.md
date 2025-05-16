@@ -1,7 +1,7 @@
 # WIFFLE 협업 웹사이트 프로젝트
 
 React (Vite) + Express 기반의 협업 웹 애플리케이션 프로젝트입니다.  
-프론트엔드는 Vite 기반 React로 구성되어 있으며, 백엔드는 Node.js + Express를 사용합니다.
+프론트엔드는 Vite 기반 React로 구성되어 있으며, 백엔드는 Node.js + javascript를 사용합니다.
 
 ---
 
