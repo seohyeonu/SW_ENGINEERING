@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# --- Merged Rules ---
+
+# Dependencies
+node_modules/
+
+# Vite build
+dist/
+dist-ssr/
+.vite/
+
+# Local env
+.env
+
+# Editor settings
+.vscode/
+.idea/

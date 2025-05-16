@@ -1,0 +1,87 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modalContent {
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 800px;
+  max-width: 50%;
+  height: 680px;
+  max-height: 90%;
+  text-align: left;
+}
+
+.modalContent input {
+  font-size: 0.875rem;     /* 글자 크기 조절 (14px 정도) */
+  padding: 0.5rem;         /* 입력창 안쪽 여백 → 높이 커짐 */
+  width: 100%;             /* 전체 너비 채움 */
+  height: 40px;
+  margin-bottom: 1.1rem;  /* 아래 여백 */
+  border: 1px solid #ccc;
+  border-radius: 0.375rem; /* 모서리 둥글게 */
+  box-sizing: border-box;  /* padding 포함한 너비 계산 */
+}
+
+.modalContent hr {
+  margin-top: 0.8rem;
+  margin-bottom: 1.2rem;  /* 아래 여백 */
+}
+
+.modalContent textarea {
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  margin-bottom: 1.1rem;  /* 아래 여백 */
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  resize: none;
+  box-sizing: border-box;
+  width: 100%;
+  height: 320px;
+}
+
+.modalButtonWrapper {
+    text-align: right;
+    margin-top: 0.3rem;
+}
+
+#confirmButton{
+    margin-right: 10px;
+    background-color: #3b82f6;   /* 파란색 */
+    color: white;                /* 흰색 글씨 */
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+
+#confirmButton:hover {
+  background-color: #2563eb;   /* 더 진한 파란색 */
+}
+
+#cancelButton {
+    background-color: #6b7280; /* 회색 */
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#cancelButton:hover {
+  background-color: #4b5563;
+}

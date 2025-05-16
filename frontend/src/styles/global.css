@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 * {
   margin: 0;
   padding: 0;
@@ -21,6 +22,34 @@ html, body, #root {
   color: #213547;
   background-color: #ffffff;
 
+=======
+@font-face {
+  font-family: "PlayfairBlack"; 
+  src: url("../assets/font/PlayfairBlack.ttf") format("truetype"); 
+}
+
+@font-face {
+  font-family: "NotoSans"; 
+  src: url("../assets/font/NotoSansKR_Variable.ttf") format("truetype"); 
+}
+
+@font-face {
+  font-family: "PopinsBold"; 
+  src: url("../assets/font/Poppins_Bold.ttf") format("truetype"); 
+}
+
+@font-face {
+  font-family: "PopinsMedium"; 
+  src: url("../assets/font/Poppins_Medium.ttf") format("truetype"); 
+}
+
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+>>>>>>> origin/future_direction
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -42,6 +71,10 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+<<<<<<< HEAD
+=======
+  overflow-x: hidden;
+>>>>>>> origin/future_direction
 }
 
 h1 {
@@ -56,7 +89,11 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
+<<<<<<< HEAD
   background-color: #1a1a1a;
+=======
+  /* background-color: #1a1a1a; */
+>>>>>>> origin/future_direction
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -71,12 +108,24 @@ button:focus-visible {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
+<<<<<<< HEAD
     background-color: #ffffff;
+=======
+    /* background-color: #ffffff; */
+>>>>>>> origin/future_direction
   }
   a:hover {
     color: #747bff;
   }
   button {
+<<<<<<< HEAD
     background-color: #f9f9f9;
   }
 }
+=======
+    /* background-color: #f9f9f9; */
+  }
+}
+
+
+>>>>>>> origin/future_direction

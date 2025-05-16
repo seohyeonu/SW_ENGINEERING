@@ -13,7 +13,11 @@ const Profile = () => {
         <Title>{user?.username}</Title>
         <div>소속 : 00대학교</div>
         <div>개인 연락처 : 010 - 1234 - 5678</div>
+<<<<<<< HEAD
         <div>개인 이메일 : user1@gmail.com</div>
+=======
+        <div>개인 이메일 : user@gmail.com</div>
+>>>>>>> origin/future_direction
       </InfoBox>
 
     </Container>
