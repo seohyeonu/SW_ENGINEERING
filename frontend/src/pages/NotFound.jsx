@@ -1,14 +1,4 @@
 import React from 'react'
-<<<<<<< HEAD
-
-const NotFound = () => {
-  return (
-    <div>NotFound</div>
-  )
-}
-
-export default NotFound
-=======
 import styled from 'styled-components'
 import { useAuthStore } from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
@@ -67,4 +57,3 @@ const Container = styled.div`
     margin-top: 10px;
   }
 `
->>>>>>> origin/future_direction

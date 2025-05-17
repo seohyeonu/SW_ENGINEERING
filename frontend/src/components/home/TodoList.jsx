@@ -88,19 +88,11 @@ const PriorityTag = styled.div`
   background-color: ${props => {
     switch(props.priority) {
       case 'HIGH':
-<<<<<<< HEAD
-        return '#ff5252';
-      case 'MEDIUM':
-        return '#ffeb3b';
-      case 'LOW':
-        return '#4caf50';
-=======
         return '#8BB3FF';
       case 'MEDIUM':
         return '#B1CCFF';
       case 'LOW':
         return '#D6E4FF';
->>>>>>> origin/future_direction
       default:
         return '#eee';
     }

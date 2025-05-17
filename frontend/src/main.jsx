@@ -6,9 +6,5 @@ import RootRouter from '../src/routes/RootRouter'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RootRouter />
-<<<<<<< HEAD
-  </StrictMode>,
-=======
   </StrictMode>
->>>>>>> origin/future_direction
 )
