@@ -12,33 +12,84 @@ function SignInAndSignUp() {
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
+  // #. 회원가입 로직에 대한 부분
+  const [registerName, setRegisterName] = useState('');
+  const [registerUsername, setRegisterUsername] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerDepartment, setRegisterDepartment] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerPasswordCheck, setRegisterPasswordCheck] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
   const { login } = useAuthStore(); // 상태 저장 함수 불러오기
 
+  // #. 로그인 로직에 대한 부분
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      // const response = await fetch('/api/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     username: loginUsername,
-      //     password: loginPassword,
-      //   }),
-      // });
+      const response = await fetch('http://localhost:3000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 쿠키를 포함하기 위해 필요
+        body: JSON.stringify({
+          username: loginUsername,
+          password: loginPassword,
+        }),
+      });
 
-      // const data = await response.json();
+      const data = await response.json();
 
-      // if (!data.success) {
-      //   alert('로그인 실패: ' + data.message);
-      //   return;
-      // }
+      if (!data.success) {
+        alert('로그인 실패: ' + data.message);
+        return;
+      }
 
-      login({ username: loginUsername });        // 백엔드 활성화 시 login(data.user);를 둘 것.
+      login(data.user); // 백엔드에서 받은 사용자 정보로 로그인
       navigate('/dashboard');  // 이동
     } catch (error) {
       console.error('로그인 중 오류:', error);
-      alert('서버 오류');
+      alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
+  // #. 회원가입 제출 함수
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+
+    // 비밀번호 확인
+    if (registerPassword !== registerPasswordCheck) {
+      setPasswordError('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: registerName,
+          username: registerUsername,
+          email: registerEmail,
+          password: registerPassword,
+          phone: isPhoneNum.replace(/-/g, ''), // 하이픈 제거
+          department: registerDepartment
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        alert('회원가입 실패: ' + data.message);
+        return;
+      }
+
+      alert('회원가입이 완료되었습니다. 로그인해주세요.');
+      handleToggleToLogin(); // 로그인 화면으로 전환
+    } catch (error) {
+      console.error('회원가입 중 오류:', error);
+      alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -55,7 +106,6 @@ function SignInAndSignUp() {
       e.preventDefault();
     }
   };
-
 
   // 0. 전화번호 입력시 fomat 알아서 맞춰주기
   const formatPhoneNumber = (value) => {
@@ -207,38 +257,95 @@ function SignInAndSignUp() {
       </div>
 
       <div className={`${styles['form-box']} ${styles.register}`}>
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={handleRegisterSubmit}>
           <h1>Sign up</h1>
           <br />
           <hr />
           <div className={styles['input-box']}>
             <i className="bx bxs-user"></i>
-            <input type="text" name="name" placeholder="Name" required />
+            <input 
+              type="text" 
+              name="name" 
+              placeholder="Name" 
+              value={registerName}
+              onChange={(e) => setRegisterName(e.target.value)}
+              required 
+            />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-user-account"></i>
-            <input type="text" name="username" placeholder="Username" required />
+            <input 
+              type="text" 
+              name="username" 
+              placeholder="Username" 
+              value={registerUsername}
+              onChange={(e) => setRegisterUsername(e.target.value)}
+              required 
+            />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-envelope"></i>
-            <input type="email" name="email" placeholder="Email" required />
+            <input 
+              type="email" 
+              name="email" 
+              placeholder="Email" 
+              value={registerEmail}
+              onChange={(e) => setRegisterEmail(e.target.value)}
+              required 
+            />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-phone"></i>
-            <input ref={inputRef} type="text" id='phone' name="phone" placeholder="010-0000-0000" value={isPhoneNum} onChange={handlePhoneNum} onKeyDown={(e)=> {handlePhoneKeyDown(e); handleKeyDownBlockNonNumeric(e);}} maxLength={13} required />
+            <input 
+              ref={inputRef} 
+              type="text" 
+              id='phone' 
+              name="phone" 
+              placeholder="010-0000-0000" 
+              value={isPhoneNum} 
+              onChange={handlePhoneNum} 
+              onKeyDown={(e)=> {handlePhoneKeyDown(e); handleKeyDownBlockNonNumeric(e);}} 
+              maxLength={13} 
+              required 
+            />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-buildings"></i>
-            <input type="text" name="department" placeholder="Department" required />
+            <input 
+              type="text" 
+              name="department" 
+              placeholder="Department" 
+              value={registerDepartment}
+              onChange={(e) => setRegisterDepartment(e.target.value)}
+              required 
+            />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-lock-alt"></i>
-            <input type="password" name="password" placeholder="Password" required />
+            <input 
+              type="password" 
+              name="password" 
+              placeholder="Password" 
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
+              required 
+            />
           </div>
           <div className={styles['input-box']}>
             <i className='bx bxs-badge-check'></i>
-            <input type="password" name="passwordCheck" placeholder="Password check" required />
+            <input 
+              type="password" 
+              name="passwordCheck" 
+              placeholder="Password check" 
+              value={registerPasswordCheck}
+              onChange={(e) => {
+                setRegisterPasswordCheck(e.target.value);
+                setPasswordError('');
+              }}
+              required 
+            />
           </div>
+          {passwordError && <p className={styles.errorMessage}>{passwordError}</p>}
           <button type="submit" className={styles.btn}>Sign up</button>
           <p>or register with social platforms</p>
           <div className={styles['social-icons']}>
