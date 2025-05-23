@@ -117,7 +117,18 @@ class User {
     // 민감한 정보를 제외한 사용자 정보 반환
     toJSON() {
         const { password, ...userWithoutPassword } = this;
+        userWithoutPassword.phone = this.formatPhoneNumber(userWithoutPassword.phone);
         return userWithoutPassword;
+    }
+
+    formatPhoneNumber(phoneNumber) {
+        if (!phoneNumber) return null;
+        const cleaned = ('' + phoneNumber).replace(/\D/g, '');
+        const match = cleaned.match(/^(\d{2,3})(\d{3,4})(\d{4})$/);
+        if (match) {
+            return match[1] + '-' + match[2] + '-' + match[3];
+        }
+        return null;
     }
 }
 

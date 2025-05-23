@@ -10,6 +10,7 @@ class Project {
         this.end_date = project.end_date;
         this.created_at = project.created_at;
         this.updated_at = project.updated_at;
+        this.manager_name = project.manager_name;
     }
 
     // 프로젝트 생성
@@ -63,19 +64,49 @@ class Project {
         }
     }
 
+    // 프로젝트 ID로 프로젝트 정보와 매니저 이름 함께 조회
+    static async findByIdWithManagerName(projectId) {
+        try {
+            const [results] = await pool.query(
+                `SELECT p.*, u.name as manager_name 
+                 FROM project p
+                 JOIN user u ON p.manager_id = u.user_id
+                 WHERE p.project_id = ?`,
+                [projectId]
+            );
+            
+            if (results.length === 0) {
+                return null;
+            }
+            
+            const project = new Project(results[0]);
+            project.manager_name = results[0].manager_name;
+            
+            return project;
+        } catch (error) {
+            console.error('프로젝트와 매니저 정보 조회 오류:', error);
+            throw error;
+        }
+    }
+
     // 사용자 ID로 프로젝트 목록 조회
     static async findByUserId(userId) {
         try {
             const [projects] = await pool.query(
-                `SELECT p.* 
+                `SELECT p.*, u.name as manager_name 
                  FROM project p
                  JOIN project_mapping pm ON p.project_id = pm.project_id
+                 JOIN user u ON p.manager_id = u.user_id
                  WHERE pm.user_id = ?
                  ORDER BY p.created_at DESC`,
                 [userId]
             );
             
-            return projects.map(project => new Project(project));
+            return projects.map(project => {
+                const newProject = new Project(project);
+                newProject.manager_name = project.manager_name;
+                return newProject;
+            });
         } catch (error) {
             console.error('사용자 프로젝트 목록 조회 오류:', error);
             throw error;
@@ -115,6 +146,24 @@ class Project {
             throw error;
         }
     }
+
+
+
+    // 프로젝트 설명(개요) 수정
+    static async updateDescription(projectId, description) {
+        try {
+            const [result] = await pool.query(
+            'UPDATE project SET description = ?, updated_at = NOW() WHERE project_id = ?',
+            [description, projectId]
+        );
+        // 업데이트 후 수정된 프로젝트 반환
+        return await Project.findById(projectId);
+         } catch (error) {
+            console.error('프로젝트 설명 수정 오류:', error);
+            throw error;
+        }
+    }
+
 
 
 

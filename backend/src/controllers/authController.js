@@ -4,6 +4,21 @@ const jwt = require('jsonwebtoken');
 // JWT 비밀키 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// 전화번호 포맷팅 함수
+const formatPhoneNumber = (phone) => {
+    if (!phone) return '';
+    
+    // 숫자만 추출
+    const numbers = phone.replace(/[^0-9]/g, '');
+    
+    // 11자리 전화번호 형식으로 변환 (010-XXXX-XXXX)
+    if (numbers.length === 11) {
+        return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+    }
+    
+    return phone; // 형식이 맞지 않으면 원본 반환
+};
+
 class AuthController {
     // 회원가입
     async register(req, res) {
@@ -96,38 +111,46 @@ class AuthController {
             console.log('Updating user status to online');
             await user.updateStatus('online');
 
-            // JWT 토큰 생성
+            // 사용자 데이터를 전체 필드와 함께 응답
+            const userData = {
+                user_id: user.user_id,
+                username: user.username,
+                email: user.email,
+                name: user.name,
+                phone: formatPhoneNumber(user.phone), // 전화번호 포맷팅 적용
+                department: user.department,
+                status: 'online',  // 로그인 시 상태를 'online'으로 설정
+                created_at: user.created_at
+            };
+
+            console.log('Sending user data:', userData);
+
+            // 토큰 생성 및 응답
             const token = jwt.sign(
-                { 
-                    id: user.user_id,
-                    username: user.username
-                },
-                JWT_SECRET,
+                { id: user.user_id, username: user.username },
+                process.env.JWT_SECRET,
                 { expiresIn: '24h' }
             );
 
-            // 쿠키에 토큰 저장
             res.cookie('token', token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: 'Lax',
                 maxAge: 24 * 60 * 60 * 1000 // 24시간
             });
 
-            const userData = user.toJSON();
-            console.log('Sending user data:', userData);
-
-            res.json({
+            res.status(200).json({
                 success: true,
                 message: '로그인 성공',
-                user: userData
+                token,
+                user: userData  // 수정된 사용자 데이터 형식
             });
 
         } catch (error) {
             console.error('Login error:', error);
             res.status(500).json({
                 success: false,
-                message: '서버 오류가 발생했습니다.'
+                message: '로그인 처리 중 오류가 발생했습니다.'
             });
         }
     }

@@ -45,14 +45,54 @@ class ProjectController {
     // 사용자별 프로젝트 목록 조회
     async getUserProjects(req, res) {
         try {
-            const userId = req.user.id; // JWT 미들웨어에서 추출한 사용자 ID
+            // 인증 미들웨어가 비활성화된 경우를 위한 임시 처리
+            let userId;
             
+            if (req.user && req.user.id) {
+                // 인증된 사용자의 ID 사용
+                userId = req.user.id;
+                console.log(`[프로젝트 컨트롤러] 인증된 사용자 ID: ${userId}`);
+            } else {
+                // 개발 중이므로 테스트용 사용자 ID 사용 (문영훈님 ID: 8)
+                userId = 8;
+                console.log(`[프로젝트 컨트롤러] 테스트용 사용자 ID: ${userId}`);
+            }
+            
+            console.log(`[프로젝트 컨트롤러] 사용자 ID ${userId}의 프로젝트 조회 시작`);
             const projects = await Project.findByUserId(userId);
+            console.log(`[프로젝트 컨트롤러] 조회된 프로젝트 수: ${projects.length}`);
+            
+            // 날짜 형식 변환
+            const formattedProjects = projects.map(project => {
+                // 원본 데이터 복사
+                const formattedProject = { ...project };
+                
+                // 날짜 형식 변환 (YYYY-MM-DDThh:mm:ss.sss -> YYYY-MM-DD)
+                if (formattedProject.start_date) {
+                    formattedProject.start_date = new Date(formattedProject.start_date).toISOString().split('T')[0];
+                }
+                
+                if (formattedProject.end_date) {
+                    formattedProject.end_date = new Date(formattedProject.end_date).toISOString().split('T')[0];
+                }
+                
+                if (formattedProject.created_at) {
+                    formattedProject.created_at = new Date(formattedProject.created_at).toISOString().split('T')[0];
+                }
+                
+                if (formattedProject.updated_at) {
+                    formattedProject.updated_at = new Date(formattedProject.updated_at).toISOString().split('T')[0];
+                }
+                
+                return formattedProject;
+            });
+            
+            console.log(`[프로젝트 컨트롤러] 변환된 프로젝트 데이터:`, formattedProjects);
             
             return res.status(200).json({
                 success: true,
-                count: projects.length,
-                projects
+                count: formattedProjects.length,
+                projects: formattedProjects
             });
         } catch (error) {
             console.error('사용자 프로젝트 목록 조회 오류:', error);
@@ -70,8 +110,8 @@ class ProjectController {
             const { projectId } = req.params;
             const userId = req.user.id;
             
-            // 프로젝트 조회
-            const project = await Project.findById(projectId);
+            // 프로젝트 조회 (매니저 이름 포함)
+            const project = await Project.findByIdWithManagerName(projectId);
             
             if (!project) {
                 return res.status(404).json({
@@ -358,6 +398,31 @@ class ProjectController {
             });
         }
     }
+
+    // 프로젝트 설명(개요) 수정
+async updateProjectDescription(req, res) {
+    try {
+        const projectId = req.params.id;
+        const { description } = req.body;
+
+        if (!description) {
+            return res.status(400).json({ success: false, message: '설명은 필수입니다.' });
+        }
+
+        const updatedProject = await Project.updateDescription(projectId, description);
+        if (!updatedProject) {
+            return res.status(404).json({ success: false, message: '프로젝트를 찾을 수 없습니다.' });
+        }
+
+        return res.status(200).json({ success: true, project: updatedProject });
+    } catch (error) {
+        console.error('프로젝트 설명 수정 오류:', error);
+        return res.status(500).json({ success: false, message: '프로젝트 설명 수정 중 오류 발생', error: error.message });
+    }
+}
+
+
+
 }
 
 module.exports = new ProjectController();
