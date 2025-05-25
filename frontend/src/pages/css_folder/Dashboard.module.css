@@ -1,0 +1,381 @@
+/* TODAY TASK 관련 */
+.todoCard {
+    border-radius: 20px;
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.06);
+    background: #fff;
+    height: 406px;
+    max-height: 406px;
+    border: none;
+}
+
+.todoHeader {
+    display: flex;
+    align-items: center;
+    padding: 24px 24px 0 24px;
+    justify-content: space-between;
+}
+
+.todoTitle {
+    font-weight: 700;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    padding-bottom: 0.5rem;
+}
+
+.todoBadge {
+  background-color: #ff4d4f !important;
+  color: #fff !important;
+  font-weight: 600;
+  margin-left: 12px;
+  transform: translateY(1px); /* 세로 정렬 보정 */
+  border-radius: 50% !important;
+}
+
+.todoItem {
+    padding: 12px 24px;
+    background: transparent;
+}
+
+.todoCheckbox {
+    font-size: 16px;
+    padding-left: 1.5rem;
+}
+
+.todoText {
+    font-size: 16px;
+    color: #222;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.todoTextChecked {
+    font-size: 16px;
+    color: #b39ddb;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+/* 캘린더 관련 */
+.calendarWrapper {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.customCalendar {
+    height: 340px;
+    flex: 4;
+}
+
+.customCalendar .ant-picker-calendar {
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    border: 2px solid #b9aaff;
+    background: #fff;
+    min-height: 340px;
+    padding-top: 12px;
+    margin-right: 0;
+}
+
+.customCalendar .ant-picker-calendar-header {
+    justify-content: center;
+    margin-bottom: 0;
+}
+
+.customCalendar .ant-picker-calendar-mode-switch {
+    display: none;
+}
+
+.customCalendar .ant-picker-calendar-date-content {
+    min-height: 0;
+}
+
+.customCalendar .ant-picker-calendar-full .ant-picker-panel {
+    border-radius: 20px;
+}
+
+.customCalendar .ant-picker-calendar-full .ant-picker-calendar-date-selected {
+    background: #6c63ff !important;
+    color: #fff !important;
+    border-radius: 50%;
+}
+
+.customCalendar .ant-picker-calendar-full .ant-picker-calendar-date-today {
+    border-color: #6c63ff !important;
+}
+
+.customCalendar .ant-picker-calendar-full .ant-picker-calendar-date {
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.customCalendar .ant-picker-calendar-full .ant-picker-calendar-date:hover {
+    background: #ede7ff;
+}
+
+.customCalendar .ant-picker-calendar-full .ant-picker-calendar-date-value {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.customCalendar .ant-picker-calendar-full .ant-picker-calendar-date-selected .ant-picker-calendar-date-value {
+    color: #fff !important;
+}
+
+.customCalendar .ant-picker-calendar-header .ant-picker-calendar-year-select,
+.customCalendar .ant-picker-calendar-header .ant-picker-calendar-month-select {
+    font-weight: 700;
+    color: #6c63ff;
+    font-size: 20px;
+}
+
+.calendarHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.calendarTitle {
+    color: #6c63ff;
+    font-weight: 700;
+    font-size: 22px;
+}
+
+.calendarNavButton {
+    margin-left: 10px;
+    margin-right: 10px;
+    border: none;
+    color: #6c63ff;
+    font-size: large;
+    font-weight: 800;
+}
+
+/* 프로젝트 관련 */
+.projectCard {
+    max-width: 76rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.06);
+    background: #fff;
+    padding: 0;
+    border: none;
+}
+
+.projectTitle {
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.projectSubtitle {
+    font-weight: 400;
+    font-size: 13px;
+    color: #888;
+    margin-left: 8px;
+}
+
+.projectDesc {
+    font-size: 13px;
+    color: #888;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.6;
+    max-height: calc(1.6em * 2);
+}
+
+.projectItem {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    border-radius: 12px;
+    height: 100%;
+    margin-bottom: 16px;
+}
+
+.cardButtonWrapper {
+    margin-top: auto;
+    padding-top: 8px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.projectImage {
+    height: 150px;
+    object-fit: cover;
+    border-radius: 12px 12px 0 0;
+}
+
+.emptyProjectCard {
+    border-radius: 12px;
+    min-height: 270px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bbb;
+    font-size: 32px;
+}
+
+.projectScrollWrapper {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scroll-snap-type: x mandatory;
+}
+
+.projectScrollWrapper::-webkit-scrollbar {
+    height: 8px;
+}
+.projectScrollWrapper::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+}
+
+.projectCardItem {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    width: 260px;
+    height: 282px;
+}
+
+
+/* 모달 창에 대한 부분 */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.modalContent_0 {
+    width: 100vw;
+    max-width: 800px;
+    height: auto;
+    max-height: 100vh;
+    overflow-y: auto;
+
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    box-sizing: border-box;
+}
+
+.modalContent_0 input {
+    font-size: 0.875rem;     /* 글자 크기 조절 (14px 정도) */
+    padding: 0.5rem;         /* 입력창 안쪽 여백 → 높이 커짐 */
+    width: 100%;             /* 전체 너비 채움 */
+    height: 40px;
+    margin-bottom: 1.1rem;  /* 아래 여백 */
+    border: 1px solid #ccc;
+    border-radius: 0.375rem; /* 모서리 둥글게 */
+    box-sizing: border-box;  /* padding 포함한 너비 계산 */
+}
+
+.modalContent_0 textarea {
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  margin-bottom: 1.1rem;  /* 아래 여백 */
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  resize: none;
+  box-sizing: border-box;
+  width: 100%;
+  height: 320px;
+}
+
+.modalContent_0 hr {
+    margin-top: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.modalContent hr {
+    margin-top: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.modalContent h4 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 1.05rem;
+}
+
+.modalButtonWrapper {
+    text-align: right;
+    margin-top: 1.5rem;
+}
+
+#confirmButton {
+    margin-right: 10px;
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#confirmButton:hover {
+    background-color: #2563eb;
+}
+
+#cancelButton {
+    background-color: #6b7280;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#cancelButton:hover {
+    background-color: #4b5563;
+}
+
+.title {
+    cursor: pointer;
+    margin-right: auto;
+}
+
+.title:hover {
+    text-decoration: underline;
+    color: #4b5563;
+}
+
+.articleScrollBox {
+    max-height: 150px;
+    min-height: 150px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    line-height: 1.6;
+}
+
+.creatModalContent {
+    width: 100vw;
+    max-width: 800px;
+    height: auto;
+    max-height: 100vh;
+    overflow-y: auto;
+
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    box-sizing: border-box;
+}

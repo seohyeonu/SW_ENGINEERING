@@ -2,6 +2,7 @@ import styles from './css_folder/SignInAndSignUp.module.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../store/authStore'
+import Cookies from 'js-cookie'; // js-cookie 라이브러리 추가
 
 function SignInAndSignUp() {
   const [isPhoneNum, setIsPhoneNum] = useState('');
@@ -12,26 +13,27 @@ function SignInAndSignUp() {
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // #. 회원가입 로직에 대한 부분
+  // #. 회원가입 로직에 대한 부분 (추가해야 할 부분)
   const [registerName, setRegisterName] = useState('');
   const [registerUsername, setRegisterUsername] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState(''); // 이 부분이 중요!
+  const [registerPasswordCheck, setRegisterPasswordCheck] = useState(''); // 이 부분이 중요!
   const [registerDepartment, setRegisterDepartment] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerPasswordCheck, setRegisterPasswordCheck] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [passwordError, setPasswordError] = useState(''); // 비밀번호 불일치 에러 메시지
 
   const { login } = useAuthStore(); // 상태 저장 함수 불러오기
 
-  // #. 로그인 로직에 대한 부분
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-
+    console.log('▶️ 로그인 직전 값', loginUsername, loginPassword);
     try {
-      const response = await fetch('http://localhost:3000/api/login', {
+      const response = await fetch('/api/auth/login', {  // 백엔드 라우트 설정에 맞춘 URL
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // 쿠키를 포함하기 위해 필요
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify({
           username: loginUsername,
           password: loginPassword,
@@ -45,15 +47,25 @@ function SignInAndSignUp() {
         return;
       }
 
-      login(data.user); // 백엔드에서 받은 사용자 정보로 로그인
-      navigate('/dashboard');  // 이동
+      // 토큰을 쿠키에 저장
+      if (data.token) {
+        Cookies.set('token', data.token, { 
+          expires: 1,
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'Lax'
+        });
+      }
+
+      login(data.user);
+      navigate('/dashboard');
     } catch (error) {
       console.error('로그인 중 오류:', error);
-      alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      alert('서버 연결에 실패했습니다. 서버가 실행 중인지 확인해주세요.');
     }
   };
 
-  // #. 회원가입 제출 함수
+  // 회원가입 제출 함수
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
@@ -61,10 +73,13 @@ function SignInAndSignUp() {
     if (registerPassword !== registerPasswordCheck) {
       setPasswordError('비밀번호가 일치하지 않습니다.');
       return;
+    } else {
+      setPasswordError(''); // 일치하면 에러 메시지 초기화
     }
 
+    // fetch 경로가 이상함...... 이거 고쳐야함
     try {
-      const response = await fetch('http://localhost:3000/api/register', {
+      const response = await fetch('http://localhost:3000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -93,6 +108,7 @@ function SignInAndSignUp() {
     }
   };
 
+
   // #. 회원가입과 로그인 창 변경 로직
   const handleToggleToRegister = () => setIsActive(true);
   const handleToggleToLogin = () => setIsActive(false);
@@ -107,6 +123,7 @@ function SignInAndSignUp() {
     }
   };
 
+
   // 0. 전화번호 입력시 fomat 알아서 맞춰주기
   const formatPhoneNumber = (value) => {
     const onlyNums = value.replace(/[^0-9]/g, '');
@@ -117,7 +134,7 @@ function SignInAndSignUp() {
   /*
   const str = "0123456789";
   str.slice(0, 3);  "012"       0~2번째 문자까지
-  str.slice(3);     "3456789"	  3번째부터 끝까지
+  str.slice(3);     "3456789"   3번째부터 끝까지
   */
 
   const inputRef = useRef(null);
@@ -152,7 +169,7 @@ function SignInAndSignUp() {
       if (/\d/.test(formatted[i])) {  // "010-1234-5678"에서 하이픈이 아니면 digitsSeen을 1씩 증가 시킴.
         digitsSeen++;
       }
-      if (digitsSeen === leftDigitsCount) { 
+      if (digitsSeen === leftDigitsCount) {
         /*
           "010" 이어도 leftDigitsCount = 3 이라 i = 2;
           "010-" 이어도 leftDigitsCount = 3 이라 i = 2;
@@ -263,86 +280,86 @@ function SignInAndSignUp() {
           <hr />
           <div className={styles['input-box']}>
             <i className="bx bxs-user"></i>
-            <input 
-              type="text" 
-              name="name" 
-              placeholder="Name" 
+            <input
+              type="text"
+              name="name"
+              placeholder="Name"
               value={registerName}
               onChange={(e) => setRegisterName(e.target.value)}
-              required 
+              required
             />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-user-account"></i>
-            <input 
-              type="text" 
-              name="username" 
-              placeholder="Username" 
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
               value={registerUsername}
               onChange={(e) => setRegisterUsername(e.target.value)}
-              required 
+              required
             />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-envelope"></i>
-            <input 
-              type="email" 
-              name="email" 
-              placeholder="Email" 
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
               value={registerEmail}
               onChange={(e) => setRegisterEmail(e.target.value)}
-              required 
+              required
             />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-phone"></i>
-            <input 
-              ref={inputRef} 
-              type="text" 
-              id='phone' 
-              name="phone" 
-              placeholder="010-0000-0000" 
-              value={isPhoneNum} 
-              onChange={handlePhoneNum} 
-              onKeyDown={(e)=> {handlePhoneKeyDown(e); handleKeyDownBlockNonNumeric(e);}} 
-              maxLength={13} 
-              required 
+            <input
+              ref={inputRef}
+              type="text"
+              id='phone'
+              name="phone"
+              placeholder="010-0000-0000"
+              value={isPhoneNum}
+              onChange={handlePhoneNum}
+              onKeyDown={(e)=> {handlePhoneKeyDown(e); handleKeyDownBlockNonNumeric(e);}}
+              maxLength={13}
+              required
             />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-buildings"></i>
-            <input 
-              type="text" 
-              name="department" 
-              placeholder="Department" 
+            <input
+              type="text"
+              name="department"
+              placeholder="Department"
               value={registerDepartment}
               onChange={(e) => setRegisterDepartment(e.target.value)}
-              required 
+              required
             />
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-lock-alt"></i>
-            <input 
-              type="password" 
-              name="password" 
-              placeholder="Password" 
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
               value={registerPassword}
               onChange={(e) => setRegisterPassword(e.target.value)}
-              required 
+              required
             />
           </div>
           <div className={styles['input-box']}>
             <i className='bx bxs-badge-check'></i>
-            <input 
-              type="password" 
-              name="passwordCheck" 
-              placeholder="Password check" 
+            <input
+              type="password"
+              name="passwordCheck"
+              placeholder="Password check"
               value={registerPasswordCheck}
               onChange={(e) => {
                 setRegisterPasswordCheck(e.target.value);
-                setPasswordError('');
+                setPasswordError(''); // 비밀번호 확인 시 에러 메시지 초기화
               }}
-              required 
+              required
             />
           </div>
           {passwordError && <p className={styles.errorMessage}>{passwordError}</p>}
@@ -371,5 +388,6 @@ function SignInAndSignUp() {
     </div>
   );
 }
+
 
 export default SignInAndSignUp;

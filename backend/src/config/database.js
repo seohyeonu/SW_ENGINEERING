@@ -5,6 +5,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 // 환경변수 로드 확인
 console.log('Environment variables:', {
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD ? '[SET]' : '[NOT SET]',
     database: process.env.DB_NAME
@@ -12,12 +13,16 @@ console.log('Environment variables:', {
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    // Disable SSL for local development and set a connection timeout
+    ssl: false,
+    connectTimeout: 10000,
 });
 
 module.exports = pool;

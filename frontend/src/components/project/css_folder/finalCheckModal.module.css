@@ -1,0 +1,79 @@
+.finalCheckModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.finalCheckModalContent {
+    width: 100vw;
+    max-width: 400px;
+    height: auto;
+    max-height: 100vh;
+    overflow-y: auto;
+
+    background: white;
+    padding: 1.3rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    box-sizing: border-box;
+}
+
+.finalCheckModalContent hr {
+    margin-top: 0.5rem;
+    margin-bottom: 1.2rem;  /* 아래 여백 */
+}
+
+.finalCheckModalContent h4 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.main_text {
+    font-size: 1.07rem;
+    margin-top: 1.2rem;
+    margin-bottom: 1.6rem;  /* 아래 여백 */
+}
+
+.modalButtonWrapper {
+    text-align: right;
+    margin-top: 0.3rem;
+}
+
+#confirmButton{
+    margin-right: 10px;
+    background-color: #3b82f6;   /* 파란색 */
+    color: white;                /* 흰색 글씨 */
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+
+#confirmButton:hover {
+  background-color: #2563eb;   /* 더 진한 파란색 */
+}
+
+#cancelButton {
+    background-color: #6b7280; /* 회색 */
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#cancelButton:hover {
+  background-color: #4b5563;
+}

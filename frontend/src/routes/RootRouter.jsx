@@ -8,6 +8,7 @@ import NotFound from '../pages/NotFound'
 import Main from '../pages/Main';
 import SignInAndSignUp from '../pages/SignInAndSignUp'
 import { ConfigProvider } from 'antd'
+import History from '../pages/History'
 
 function RootRouter() {
   const { isAuthenticated } = useAuthStore()
@@ -35,6 +36,7 @@ function RootRouter() {
             <Route element={<RootLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/project/:id" element={<Project />} />
+              <Route path="/history" element={<History />} />
             </Route>
           </Route>
 

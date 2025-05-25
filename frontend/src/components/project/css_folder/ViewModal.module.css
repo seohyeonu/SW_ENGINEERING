@@ -1,0 +1,183 @@
+.viewModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.viewModalContent {
+  display: flex;
+  flex-direction: row;
+  width: 95vw;
+  max-width: 1300px;
+  min-height: 85vh;
+  max-height: 85vh;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  font-family: 'Noto Sans KR', sans-serif;
+  overflow: hidden;
+}
+
+/* 왼쪽 내용 */
+.leftSection {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  border-right: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 오른쪽 댓글 */
+.rightSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  background-color: #f9fafb;
+  overflow: hidden; /* 내부 요소가 스크롤 */
+}
+
+/* 작성자 ~ 조회수 가로정렬 */
+.metaInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-size: 0.89rem;
+  color: #555;
+  margin-bottom: 1.2rem;
+}
+
+.label {
+  font-weight: 600;
+  display: inline-block;
+  width: 70px;
+  color: #333;
+}
+
+.leftSection hr {
+  margin-top: 0rem;
+  margin-bottom: 0.2rem;
+}
+
+.leftSection p {
+  margin-top: 1.2rem;
+}
+
+.contentScrollBox {
+  max-height: 180px; /* 필요에 따라 조절 가능 */
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  margin: 0.8rem 0 0.5rem 0;
+  line-height: 1.6;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 0.8rem;
+  background-color: #fafafa;
+}
+
+.taskInfoGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+/* 댓글 목록 */
+.commentList {
+  list-style: none;
+  padding-left: 0;
+  margin: 1rem 0;
+  overflow-y: auto;
+  flex: 1; /* 남는 공간 차지해서 스크롤 가능하게 */
+}
+
+.commentItem {
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.commentText {
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+}
+
+/* 댓글 입력 */
+.commentInputBox {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto; /* 가장 아래로 밀어냄 */
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.commentInputBox input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.commentInputBox button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.commentInputBox button:hover {
+  background-color: #1d4ed8;
+}
+
+/* 버튼 래퍼 */
+.modalButtonWrapper {
+  text-align: right;
+  margin-top: auto; /* 하단으로 밀어내기 */
+  padding-top: 2rem;
+}
+
+#editButton,
+#closeButton {
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+#editButton {
+  background-color: #3b82f6;
+  color: white;
+}
+
+#editButton:hover {
+  background-color: #2563eb;
+}
+
+#closeButton {
+  background-color: #6b7280;
+  color: white;
+}
+
+#closeButton:hover {
+  background-color: #4b5563;
+}

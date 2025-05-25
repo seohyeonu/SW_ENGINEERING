@@ -1,0 +1,170 @@
+/* 버튼 */
+.floatingButton {
+  position: fixed;
+  top: 120px;
+  right: 24px;
+  z-index: 1000;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #454545;
+}
+
+/* 모달 헤더 */
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.modalTitle,
+.deleteModeTitle {
+  font-weight: 700;
+  font-size: 18px;
+  color: #222;
+  margin-right: 8px;
+}
+
+.deleteModeTitle {
+  font-size: 17px;
+}
+
+.iconBtn {
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  font-size: 22px;
+  color: #888;
+  transition: color 0.2s;
+}
+
+.iconBtn:hover {
+  color: #659BFF;
+}
+
+/* 리스트 내부 항목 */
+.listItem {
+  padding: 8px 0;
+  padding-right: 16px;
+}
+
+.memberContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.memberText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.memberInfoLine {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.memberName {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.memberTeam {
+  font-size: 13px;
+  color: #888;
+}
+
+.memberStatus {
+  font-size: 13px;
+}
+
+/* 팝업 */
+.popupWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2001;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(31, 38, 135, 0.10);
+  min-width: 320px;
+  min-height: 80px;
+  padding: 18px 18px 10px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.popupRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.popupIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffb300;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.popupTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 2px;
+}
+
+.popupDesc {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.popupButtonWrapper {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.popupButton {
+  font-size: 13px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #347cff;
+  font-weight: 500;
+  cursor: pointer;
+}

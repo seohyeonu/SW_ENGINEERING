@@ -1,0 +1,67 @@
+/* 리스트 전체 영역 */
+.selectedMemberGroups {
+    margin-left: 12px;
+    padding: 5px;
+}
+
+.dragListContainer {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  overflow-x: auto; /*스크롤이 가능하게 해줌.*/
+  white-space: nowrap;
+  padding-bottom: 8px;
+}
+
+/* 드래그 가능한 개별 아이템 */
+.draggableItem {
+  padding: 5px 10px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  cursor: grab;
+  background-color: #f0f0f0;
+  white-space: nowrap;
+}
+
+.dropArea {
+  min-height: 110px;
+  max-height: 110px;
+  border: thick double rgb(209, 209, 209);
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background-color: #f9f9f9;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  align-items: flex-start;
+}
+
+.dropAreaEmpty {
+  align-items: center;
+  justify-content: center;
+}
+
+.dropPlaceholder {
+  color: #999;
+}
+
+.selectedMember {
+  background-color: rgb(50, 139, 255);
+  color: white;
+  padding: 3px 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.removeButton {
+  margin-left: 1px;
+  padding: 3px 4px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}

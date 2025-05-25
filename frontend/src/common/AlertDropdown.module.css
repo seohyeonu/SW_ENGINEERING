@@ -1,0 +1,67 @@
+.alertDropdown {
+  position: absolute;
+  top: 65px;
+  right: 0;
+  transform: translateX(-58%);
+  width: 400px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  padding: 16px;
+}
+
+.alertList {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.alertItem {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #fafafa;
+  transition: background-color 0.2s ease;
+}
+
+.alertItem:hover {
+  background-color: #f0f8ff;
+}
+
+.alertTitle {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.alertSub {
+  font-size: 13px;
+  color: #555;
+  font-style: italic;
+}
+
+.alertDeadline {
+  color: red;
+  font-weight: bold;
+}
+
+.sectionTitle {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.alertTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.alertTable th,
+.alertTable td {
+  text-align: left;
+  padding: 4px 0;
+}
