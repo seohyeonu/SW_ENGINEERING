@@ -93,6 +93,26 @@
   text-align: center;
 }
 
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 6px;
+  line-height: 1;
+  height: 20px;
+}
+
+.inlineErrorText {
+  color: red;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  padding-top: 19px;
+  margin-left: 0.5rem;
+  display: inline-block;
+  line-height: 1;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

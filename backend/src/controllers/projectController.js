@@ -1,5 +1,11 @@
 const Project = require('../models/projectModel');
 const User = require('../models/userModel');
+const pool = require('../config/database');
+const Announcement = require('../models/announcementModel');
+const AnnouncementComment = require('../models/announcementcommentModel');
+const Task = require('../models/taskModel');
+const TaskComment = require('../models/taskcommentModel');
+const Log = require('../models/logModel');
 
 class ProjectController {
     // 프로젝트 생성
@@ -213,53 +219,7 @@ class ProjectController {
         }
     }
     
-    // 프로젝트 삭제
-    async deleteProject(req, res) {
-        try {
-            const { projectId } = req.params;
-            const userId = req.user.id;
-            
-            // 프로젝트 조회
-            const project = await Project.findById(projectId);
-            
-            if (!project) {
-                return res.status(404).json({
-                    success: false,
-                    message: '프로젝트를 찾을 수 없습니다.'
-                });
-            }
-            
-            // 현재 사용자가 프로젝트 매니저인지 확인
-            if (project.manager_id !== userId) {
-                return res.status(403).json({
-                    success: false,
-                    message: '프로젝트를 삭제할 권한이 없습니다.'
-                });
-            }
-            
-            // 프로젝트 삭제
-            const deleted = await Project.delete(projectId);
-            
-            if (!deleted) {
-                return res.status(500).json({
-                    success: false,
-                    message: '프로젝트 삭제에 실패했습니다.'
-                });
-            }
-            
-            return res.status(200).json({
-                success: true,
-                message: '프로젝트가 성공적으로 삭제되었습니다.'
-            });
-        } catch (error) {
-            console.error('프로젝트 삭제 오류:', error);
-            return res.status(500).json({
-                success: false,
-                message: '프로젝트 삭제 중 오류가 발생했습니다.',
-                error: error.message
-            });
-        }
-    }
+ 
     
     // 프로젝트에 사용자 추가
     async addUserToProject(req, res) {
@@ -362,6 +322,18 @@ class ProjectController {
                     message: '해당 사용자가 프로젝트에 속해있지 않습니다.'
                 });
             }
+
+            const io = req.app.get('io');
+            await pool.query(
+                'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
+                [userId, '프로젝트 추방', `"${project.project_name}" 프로젝트에서 추방되었습니다.`]
+            );
+            io.to(`user-${userId}`).emit('new-notification', {
+                title: '프로젝트 추방',
+                message: `"${project.project_name}" 프로젝트에서 추방되었습니다.`,
+                created_at: new Date(),
+                is_read: 0,
+            });
             
             return res.status(200).json({
                 success: true,
@@ -400,7 +372,7 @@ class ProjectController {
     }
 
     // 프로젝트 설명(개요) 수정
-async updateProjectDescription(req, res) {
+    async updateProjectDescription(req, res) {
     try {
         const projectId = req.params.id;
         const { description } = req.body;
@@ -419,8 +391,419 @@ async updateProjectDescription(req, res) {
         console.error('프로젝트 설명 수정 오류:', error);
         return res.status(500).json({ success: false, message: '프로젝트 설명 수정 중 오류 발생', error: error.message });
     }
-}
+    }
 
+    // 프로젝트 멤버 목록 조회
+    async getMembers(req, res) {
+        try {
+            const { projectId } = req.params;
+            const userId = req.user.id;
+
+            console.log('ProjectController - getMembers - 요청 정보:', {
+                projectId,
+                userId
+            });
+
+            // 프로젝트 존재 여부 확인
+            const project = await Project.findById(projectId);
+            if (!project) {
+                return res.status(404).json({
+                    success: false,
+                    message: '프로젝트를 찾을 수 없습니다.'
+                });
+            }
+
+            // 현재 사용자가 프로젝트 멤버인지 확인
+            const members = await Project.getMembers(projectId);
+            const isMember = members.some(member => member.user_id === userId);
+
+            if (!isMember) {
+                return res.status(403).json({
+                    success: false,
+                    message: '이 프로젝트의 멤버를 조회할 권한이 없습니다.'
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                members: members
+            });
+
+        } catch (error) {
+            console.error('프로젝트 멤버 조회 오류:', error);
+            return res.status(500).json({
+                success: false,
+                message: '프로젝트 멤버 조회 중 오류가 발생했습니다.',
+                error: error.message
+            });
+        }
+    }
+
+    // 프로젝트의 특정 팀 멤버 조회
+    async getTeamMembers(req, res) {
+        try {
+            const { projectId, team } = req.params;
+            const userId = req.user.id;
+
+            console.log('ProjectController - getTeamMembers - 요청 정보:', {
+                projectId,
+                team,
+                userId
+            });
+
+            // 프로젝트 멤버십 확인
+            const projectMembers = await Project.getMembers(projectId);
+            const isMember = projectMembers.some(member => member.user_id === userId);
+
+            if (!isMember) {
+                return res.status(403).json({
+                    success: false,
+                    message: '이 프로젝트의 멤버를 조회할 권한이 없습니다.'
+                });
+            }
+
+            // 특정 팀 멤버 조회
+            const [results] = await pool.query(
+                `SELECT u.user_id, u.name 
+                 FROM project_mapping p 
+                 JOIN user u ON p.user_id = u.user_id 
+                 WHERE p.fields = ? 
+                 AND p.project_id = ?`,
+                [team, projectId]
+            );
+
+            return res.status(200).json({
+                success: true,
+                members: results
+            });
+
+        } catch (error) {
+            console.error('팀 멤버 조회 오류:', error);
+            return res.status(500).json({
+                success: false,
+                message: '팀 멤버 조회 중 오류가 발생했습니다.',
+                error: error.message
+            });
+        }
+    }
+
+    // 프로젝트 이름 조회
+     async getProjectName(req, res) {
+        const { id } = req.params;
+
+        try {
+            const project = await Project.findById(id);
+            if (!project) {
+            return res.status(404).json({ success: false, message: '해당 프로젝트를 찾을 수 없습니다.' });
+        }
+
+      res.json({ success: true, project_name: project.project_name });
+    } catch (error) {
+      console.error('프로젝트 이름 조회 오류:', error);
+      res.status(500).json({ success: false, message: '서버 오류' });
+    }
+    }
+
+  // 현재 로그인한 사용자의 프로젝트 목록 조회
+  async getMyProjects(req, res) {
+    try {
+        const userId = req.user?.user_id || req.user?.id; // 안전하게 처리
+        if (!userId) {
+            return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
+        }
+
+        const projects = await Project.findByUserId(userId);
+        res.status(200).json({ success: true, projects });
+    } catch (err) {
+        console.error('내 프로젝트 목록 조회 오류:', err);
+        res.status(500).json({ success: false, message: '서버 오류' });
+    }
+  }
+
+   /*
+    5.28 작업 내용*/
+        // 프로젝트 삭제
+    async deleteProject(req, res) {
+            try {
+                const { projectId } = req.params;
+                const userId = req.user.id;  // JWT 토큰에서 사용자 ID 가져오기
+                
+                console.log('[백엔드] 프로젝트 삭제 요청:', {
+                    projectId,
+                    userId,
+                    user: req.user,
+                    headers: req.headers
+                });
+                
+                // 1. 프로젝트 존재 여부 확인
+                const project = await Project.findById(projectId);
+                console.log('[백엔드] 프로젝트 조회 결과:', project);
+    
+                if (!project) {
+                    console.log('[백엔드] 프로젝트를 찾을 수 없음');
+                    return res.status(404).json({
+                        success: false,
+                        message: '프로젝트를 찾을 수 없습니다.'
+                    });
+                }
+    
+                // 2. 현재 사용자가 프로젝트 매니저인지 확인
+                console.log('[백엔드] 매니저 권한 확인:', {
+                    projectManagerId: project.manager_id,
+                    requestUserId: userId,
+                    isManager: project.manager_id === userId
+                });
+    
+                if (project.manager_id !== userId) {
+                    console.log('[백엔드] 프로젝트 삭제 권한 없음');
+                    return res.status(403).json({
+                        success: false,
+                        message: '프로젝트를 삭제할 권한이 없습니다.'
+                    });
+                }
+    
+                console.log('[백엔드] 프로젝트 관련 데이터 삭제 시작');
+    
+                // 3. 공지 댓글 삭제
+                await AnnouncementComment.deleteByProjectId(projectId);
+                console.log('[백엔드] 공지 댓글 삭제 완료');
+    
+                // 4. 공지 삭제
+                await Announcement.deleteAnnouncementsByProjectId(projectId);
+                console.log('[백엔드] 공지 삭제 완료');
+    
+                // 5. 작업 댓글 삭제
+                await TaskComment.deleteByProjectId(projectId);
+                console.log('[백엔드] 작업 댓글 삭제 완료');
+    
+                // 6. 작업 할당 정보 삭제
+                await Task.deletetaskassigneesByProjectId(projectId);
+                console.log('[백엔드] 작업 할당 정보 삭제 완료');
+    
+                // 7. 작업 삭제
+                await Task.deleteByProjectId(projectId);
+                console.log('[백엔드] 작업 삭제 완료');
+    
+                // 8. 프로젝트 사용자 매핑 삭제
+                await Project.deleteProjectMapping(projectId);
+                console.log('[백엔드] 프로젝트 사용자 매핑 삭제 완료');
+
+
+                //9. 로그 삭제
+                await Log.deleteByProjectId(projectId);
+                console.log('[백엔드] 로그 삭제 완료');
+    
+                // 9. 프로젝트 삭제
+                await Project.deleteProject(projectId);
+                console.log('[백엔드] 프로젝트 삭제 완료');
+    
+                console.log('[백엔드] 프로젝트 삭제 성공');
+                return res.status(200).json({
+                    success: true,
+                    message: '프로젝트가 성공적으로 삭제되었습니다.'
+                });
+    
+            } catch (error) {
+                console.error('[백엔드] 프로젝트 삭제 오류:', error);
+                return res.status(500).json({
+                    success: false,
+                    message: '프로젝트 삭제 중 오류가 발생했습니다.',
+                    error: error.message
+                });
+            }
+        }
+
+    //프로젝트 팀원 초대
+    async inviteMember(req, res) {
+        try {
+            const { projectId } = req.params;
+            const { email, fields } = req.body;
+            const userId = req.user.id; // 로그인한 사용자 ID (보통 매니저일 것)
+    
+            console.log('[백엔드] 팀원 초대 요청:', {
+                projectId,
+                email,
+                fields,
+                inviterId: userId
+            });
+    
+            // 1. 프로젝트 존재 여부 확인
+            const project = await Project.findById(projectId);
+            if (!project) {
+                return res.status(404).json({
+                    success: false,
+                    message: '프로젝트를 찾을 수 없습니다.'
+                });
+            }
+    
+            // 2. 현재 사용자가 프로젝트 매니저인지 확인
+            if (project.manager_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    message: '프로젝트에 팀원을 초대할 권한이 없습니다.'
+                });
+            }
+    
+            // 3. 팀원 초대 수행
+            const result = await Project.inviteMemberByEmail(projectId, email, fields);
+
+            // #. 알림 추가
+            const invitedUserId = result.userId;
+
+            // 알림 전송 준비
+            const io = req.app.get('notificationIo');
+            const [[projectInfo]] = await pool.query('SELECT project_name FROM project WHERE project_id = ?', [projectId]);
+            await pool.query(
+                'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
+                [invitedUserId, '프로젝트 초대', `"${projectInfo.project_name}" 프로젝트에 초대되었습니다.`]
+            );
+
+            // 실시간 알림 보내기 (io가 있을 때만)
+            if (io) {
+                io.to(`user-${invitedUserId}`).emit('new-notification', {
+                    title: '프로젝트 초대',
+                    message: `"${projectInfo.project_name}" 프로젝트에 초대되었습니다.`,
+                    created_at: new Date(),
+                    is_read: 0,
+                });
+            } else {
+                console.warn('[백엔드] io 객체가 없어 실시간 알림을 보낼 수 없습니다.');
+            }
+
+
+            return res.status(200).json({
+                success: true,
+                message: '팀원이 성공적으로 초대되었습니다.',
+                invitedUserId: result.userId
+            });
+    
+        } catch (error) {
+            console.error('[백엔드] 팀원 초대 오류:', error);
+            return res.status(500).json({
+                success: false,
+                message: '팀원 초대 중 오류가 발생했습니다.',
+                error: error.message
+            });
+        }
+    }
+
+    //프로젝트 팀원 초대
+    async getProjectMemerListAtTeam(req, res) {
+        try {
+            const { projectId } = req.params;
+            const userId = req.user.id;  // 인증된 사용자 ID
+
+            console.log('[ProjectController] getProjectMemerListAtTeam 호출됨:', {
+                projectId,
+                userId,
+                params: req.params,
+                query: req.query
+            });
+
+            // 프로젝트 존재 여부 확인
+            const project = await Project.findById(projectId);
+            if (!project) {
+                console.log('[ProjectController] 프로젝트를 찾을 수 없음:', projectId);
+                return res.status(404).json({
+                    success: false,
+                    message: '프로젝트를 찾을 수 없습니다.'
+                });
+            }
+
+            console.log('[ProjectController] 프로젝트 찾음:', project);
+
+            // 팀원 목록 조회
+            const memberList = await Project.getProjectMemerListAtTeam(projectId);
+            
+            console.log('[ProjectController] 조회된 멤버 목록:', memberList);
+
+            return res.status(200).json({
+                success: true,
+                members: memberList
+            });
+        } catch (error) {
+            console.error('[ProjectController] 프로젝트 멤버 조회 오류:', error);
+            return res.status(500).json({
+                success: false,
+                message: '프로젝트 멤버 조회 중 오류가 발생했습니다.',
+                error: error.message
+            });
+        }
+    }
+
+    // 프로젝트 멤버 삭제
+    async deleteMembers(req, res) {
+        try {
+            const { projectId } = req.params;
+            const { memberIds } = req.body;
+
+            if (!Array.isArray(memberIds) || memberIds.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: '삭제할 멤버를 선택해주세요.'
+                });
+            }
+
+            // 프로젝트 존재 여부 확인
+            const project = await Project.findById(projectId);
+            if (!project) {
+                return res.status(404).json({
+                    success: false,
+                    message: '프로젝트를 찾을 수 없습니다.'
+                });
+            }
+
+            // 요청한 사용자가 매니저인지 확인
+            const isManager = await Project.isManager(projectId, req.user.id);
+            if (!isManager) {
+                return res.status(403).json({
+                    success: false,
+                    message: '프로젝트 매니저만 멤버를 삭제할 수 있습니다.'
+                });
+            }
+
+            // 멤버 삭제 실행
+            const deletedCount = await Project.deleteProjectMembers(projectId, memberIds);
+
+            // 알림 및 실시간 전송
+            const io = req.app.get('notificationIo');
+
+            const [[projectInfo]] = await pool.query('SELECT project_name FROM project WHERE project_id = ?', [projectId]);
+
+            for (const memberId of memberIds) {
+                // DB에 알림 저장
+                await pool.query(
+                    'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
+                    [memberId, '프로젝트 추방', `"${projectInfo.project_name}" 프로젝트에서 추방되었습니다.`]
+                );
+
+                // 실시간 알림 전송 (io가 있을 때만)
+                if (io) {
+                    io.to(`user-${memberId}`).emit('new-notification', {
+                        title: '프로젝트 추방',
+                        message: `"${projectInfo.project_name}" 프로젝트에서 추방되었습니다.`,
+                        created_at: new Date(),
+                        is_read: 0,
+                    });
+                } else {
+                    console.warn('[백엔드] io 객체가 없어 실시간 알림을 보낼 수 없습니다.');
+                }
+            }
+
+            res.json({
+                success: true,
+                message: `${deletedCount}명의 멤버가 삭제되었습니다.`,
+                deletedCount
+            });
+
+        } catch (error) {
+            console.error('프로젝트 멤버 삭제 중 오류:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || '멤버 삭제 중 오류가 발생했습니다.'
+            });
+        }
+    }
 
 
 }

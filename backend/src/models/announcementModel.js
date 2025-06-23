@@ -35,7 +35,7 @@ class Announcement {
     static async getLatestByProjectId(projectId, limit = 3) {
         try {
             const [results] = await pool.query(
-                `SELECT a.*, u.name as author_name 
+                `SELECT a.*, u.username as author_name 
                  FROM announcement a
                  JOIN user u ON a.author_id = u.user_id
                  WHERE a.project_id = ?
@@ -59,7 +59,7 @@ class Announcement {
                     a.announcement_id, 
                     a.title, 
                     a.content, 
-                    u.name as author, 
+                    u.username AS author,
                     a.created_at, 
                     a.updated_at, 
                     a.views
@@ -96,7 +96,7 @@ class Announcement {
     static async findById(announcementId) {
         try {
             const [results] = await pool.query(
-                `SELECT a.*, u.name as author_name 
+                `SELECT a.*, u.username AS author_name 
                  FROM announcement a
                  JOIN user u ON a.author_id = u.user_id
                  WHERE a.announcement_id = ?`,
@@ -162,6 +162,23 @@ class Announcement {
             throw error;
         }
     }
+
+
+    //5.28 작업 내용
+   //프로젝트 삭제시 공지사항 삭제
+   static async deleteAnnouncementsByProjectId(projectId) {
+    try {
+        await pool.query(
+            'DELETE FROM announcement WHERE project_id = ?',
+            [projectId]
+        );
+    } catch (error) {
+        console.error('프로젝트 공지사항 삭제 오류:', error);
+        throw error;
+    }
+   }
+
+
 }
 
 module.exports = Announcement;

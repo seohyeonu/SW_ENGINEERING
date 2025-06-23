@@ -15,6 +15,7 @@
 .alertList {
   max-height: 300px;
   overflow-y: auto;
+  margin-top: 10px;
 }
 
 .alertItem {
@@ -31,9 +32,11 @@
 }
 
 .alertTitle {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
   font-weight: bold;
-  margin-bottom: 4px;
+  color: #222;
+  gap: 8px;
 }
 
 .alertSub {
@@ -64,4 +67,71 @@
 .alertTable td {
   text-align: left;
   padding: 4px 0;
+}
+
+.unread {
+  background-color: #f0f8ff;
+}
+
+.alertTitleRow {
+  display: flex;
+  justify-content: space-between; /* 왼쪽/오른쪽 정렬 */
+  align-items: center;
+}
+
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 6px;
+  margin-left: 100px;
+  transition: color 0.2s ease;
+}
+
+.deleteButton:hover {
+  color: red;
+}
+
+.notificationDot {
+  position: absolute;
+  top: 12px;
+  right: -5px;
+  width: 8px;
+  height: 8px;
+  background-color: red;
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: 0 0 0 2px white; /* 흰 테두리로 시인성 향상 */
+}
+
+.alertHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.alertHeading {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.deleteAllButton {
+  background-color: transparent;
+  color: #888;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.deleteAllButton:hover {
+  color: red;
+  background-color: #f0f0f0;
 }

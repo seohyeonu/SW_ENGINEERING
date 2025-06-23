@@ -5,40 +5,42 @@ import { Card, Avatar, Typography, Row, Col, Button, Checkbox, List, Badge } fro
 import { UserOutlined, PlusOutlined } from '@ant-design/icons'
 import { Calendar as AntdCalendar } from 'antd'
 import styles from './css_folder/Dashboard.module.css'
+import warningModalStyles from '../common/RootLayout.module.css'
 import dayjs from 'dayjs'
 import { useAuthStore } from '../store/authStore';
+import Cookies from 'js-cookie'
 
 const { Title, Text } = Typography
 
+
+const formatPhoneNumber = (phone) => {
+  if (!phone) return '';
+  
+  // 숫자만 추출
+  const numbers = phone.replace(/[^0-9]/g, '');
+  
+  // 11자리 전화번호 형식으로 변환 (010-XXXX-XXXX)
+  if (numbers.length === 11) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+  }
+  
+  return phone; // 형식이 맞지 않으면 원본 반환
+};
+
 const initialTodoData = [
-  { text: '명세서 제출하기', checked: true },
-  { text: '테스트 계획서 제출하기', checked: true },
-  { text: '인강 듣기', checked: true },
-  { text: '자격증 공부', checked: true },
+
 ]
 
 const initialProjectData = [
-  {
-    title: '웹앱 개발 프로젝트',
-    desc: '팀 프로젝트로 웹앱 개발에 참여하여, Trello와 Jira와 같은 사이트를 제작해 보자.',
-    img: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80',
-    members: 4,
-  },
-  {
-    title: '졸업작품',
-    desc: '졸업작품 주제 : 영화 추천 웹 서비스 개발',
-    img: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80',
-    members: 3,
-  }
+
 ]
 
 const Dashboard = () => {
-  const { user } = useAuthStore();
-  
   const getRandomImageUrl = () => {
     return `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/400/200`
   }
 
+  const { user } = useAuthStore();
   const navigate = useNavigate()
 
   const [todoList, setTodoList] = useState(initialTodoData)
@@ -47,6 +49,112 @@ const Dashboard = () => {
   const [creatNewProjectModal, setcreatNewProjectModal] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectArticle, setNewProjectArticle] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const [warningModal, setWarningModal] = useState(false)
+
+  // 유저 프로필 정보 가져오기
+  const [userProfile, setUserProfile] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    job_position: '',
+    description: ''
+  })
+
+  const fetchUserProfile = async () => {
+    try {
+      console.log('Frontend - 프로필 정보 요청 시작');
+
+      const response = await fetch('/api/users/profile', {
+        method: 'GET',
+        credentials: 'include' // 쿠키를 포함하여 요청
+      });
+
+      console.log('Frontend - API 응답 상태:', response.status);
+      const data = await response.json();
+      console.log('Frontend - 받은 프로필 데이터:', data);
+
+      if (data.success) {
+        console.log('Frontend - 프로필 데이터 설정:', data.user);
+        setUserProfile(data.user);
+      } else {
+        console.error('Frontend - 프로필 데이터 오류:', data.message);
+      }
+    } catch (error) {
+      console.error('Frontend - 프로필 조회 실패:', error);
+    }
+  };
+
+
+
+  const fetchTodoList = async () => {
+    try {
+      const response = await fetch('/api/tasks/today', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      const data = await response.json()
+      console.log('Frontend - 받은 태스크 목록 데이터:', data)
+
+      if (data.success) {
+        // 서버에서 이미 올바른 형식으로 데이터가 오고 있으므로 직접 설정
+        setTodoList(data.tasks)
+      } else if (data.message === '업무를 찾을 수 없습니다.') {
+        console.log('Frontend - 할일이 없습니다');
+        setTodoList([]) // 빈 배열로 설정
+      } else {
+        console.error('Frontend - 태스크 목록 데이터 오류:', data.message)
+        setTodoList([]) // 다른 에러의 경우도 빈 배열로 설정
+      }
+    } catch (error) {
+      console.error('Frontend - 태스크 목록 조회 실패:', error)
+      setTodoList([]) // 에러 시 빈 배열로 설정
+    }
+  }
+
+
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('프로젝트 목록 조회 실패');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // 받아온 프로젝트 데이터를 현재 형식에 맞게 변환
+        const formattedProjects = data.projects.map(project => ({
+          title: project.project_name,
+          desc: project.description,
+          img: getRandomImageUrl(), // 또는 project.image_url 등 실제 이미지 URL
+          members: project.member_count || 0,
+          project_id: project.project_id
+        }));
+        setProjects(formattedProjects);
+      }
+    } catch (error) {
+      console.error('프로젝트 목록 조회 오류:', error);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchUserProfile();
+    fetchTodoList();
+    fetchProjects();
+  }, []);
 
   const onCheck = (idx) => {
     setTodoList(list =>
@@ -56,45 +164,23 @@ const Dashboard = () => {
     )
   }
 
-  const dailyComments = [
-    "안녕하세요 코딩하기 좋은 하루입니다.",
-    "오늘도 화이팅입니다!",
-    "작은 성취도 큰 한 걸음입니다.",
-    "꾸준히 나아가는 여러분을 응원합니다.",
-    "오늘도 멋진 하루 보내세요!",
-    "에러도 배움의 일부입니다 :)",
-  ];
-  const [dailyComment, setDailyComment] = useState('');
-
-  useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * dailyComments.length);
-    setDailyComment(dailyComments[randomIndex]);
-  }, []);
-  
   return (
     <MainContainer>
       <RowBox>
-        <ProfileCardWrapper bodyStyle={{ display: 'flex', flexDirection: 'row', height: '100%', padding: 0 }}>
+        <ProfileCardWrapper styles={{ body: { display: 'flex', flexDirection: 'row', height: '100%', padding: 0 } }}>
           <ProfileLeft>
-            <Avatar size={140} icon={<UserOutlined />} style={{ marginBottom: 8, background: '#f5f5f5', boxShadow: '0 8px 24px 0 rgba(31,38,135,0.10)' }} />
-            <ProfileName>{user.username}</ProfileName>
-            <ProfileJob>{user.department}</ProfileJob>
+            <Avatar size={140} icon={<UserOutlined />} />
+            <ProfileName>{user?.username || '이름 없음'}</ProfileName>
+            <ProfileJob>{user?.department || '직무 정보 없음'}</ProfileJob>
           </ProfileLeft>
           <ProfileRight>
-            <ProfileInfoTitle>Daily Comment</ProfileInfoTitle>
-            <ProfileDesc>
-              {dailyComment.split('\n').map((line, index) => (
-                <React.Fragment key={index}>
-                  {line}
-                  <br />
-                </React.Fragment>
-              ))}
-            </ProfileDesc>
+            <ProfileInfoTitle>Profile Information</ProfileInfoTitle>
+            <ProfileDesc>{user?.description || '사용자 소개가 없습니다.'}</ProfileDesc>
             <ProfileLine />
             <ProfileInfoList>
-              <span>Name:</span> {user.name}<br />
-              <span>Phone:</span> {user.phone}<br />
-              <span>Email:</span> {user.email}
+              <span>Name:</span> {user?.name || '-'}<br />
+              <span>Phone:</span> {formatPhoneNumber(user?.phone) || '-'}<br />
+              <span>Email:</span> {user?.email || '-'}
             </ProfileInfoList>
           </ProfileRight>
         </ProfileCardWrapper>
@@ -119,7 +205,7 @@ const Dashboard = () => {
 
       <RowBox>
         <Col flex="3">
-          <Card className={styles.todoCard} bodyStyle={{ padding: 0, height: '100%' }}>
+          <Card className={styles.todoCard} styles={{ body: { padding: 0, height: '100%' } }}>
             <div className={styles.todoHeader}>
               <span className={styles.todoTitle}>
                 TODAY - TASK
@@ -152,12 +238,14 @@ const Dashboard = () => {
                 Projects <span className={styles.projectSubtitle}>Architects design houses</span>
               </span>
             }
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <div className={styles.projectScrollWrapper}>
               <div className={styles.projectCardItem} onClick={() => setcreatNewProjectModal(true)}>
-                <Card hoverable className={styles.emptyProjectCard} bodyStyle={{ height: 120 }}>
-                  <PlusOutlined />
+                <Card hoverable className={styles.emptyProjectCard}>
+                  <div className={styles.plusCenterBox}>
+                    <PlusOutlined />
+                  </div>
                 </Card>
               </div>
 
@@ -167,16 +255,38 @@ const Dashboard = () => {
                     hoverable
                     cover={<img alt={project.title} src={project.img} className={styles.projectImage} />}
                     className={styles.projectItem}
-                    bodyStyle={{ padding: 16, display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}
+                    styles={{ body: { padding: 16, display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' } }}
                   >
                     <Title level={5} style={{ margin: 0 }}>{project.title}</Title>
                     <Text className={styles.projectDesc}>{project.desc}</Text>
+                    <div className={styles.memberCount}>
+                      👥 {project.members}명 참여 중
+                    </div>
                     <div className={styles.cardButtonWrapper}>
-                      <Button size="small" type="primary" style={{ textAlign: 'center', fontSize: '0.75rem', padding: '10px' }}
-                      onClick={()=>{
-                        // 이동은 되는데 여기에 해당 프로젝트 맞게 데이터 넘기고 추가하기만 하면 됨.
-                        navigate('/project/1')
-                      }}>
+                      <Button
+                        size="small"
+                        type="primary"
+                        style={{ textAlign: 'center', fontSize: '0.75rem', padding: '10px' }}
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/projects/${project.project_id}`, {
+                              method: 'GET',
+                              credentials: 'include',
+                            });
+                            const data = await res.json();
+
+                            if (data.success && data.project) {
+                              navigate(`/project/${project.project_id}`, {
+                                state: { project: data.project },
+                              });
+                            } else {
+                              console.error('프로젝트 데이터 없음');
+                            }
+                          } catch (err) {
+                            console.error('프로젝트 불러오기 실패:', err);
+                          }
+                        }}
+                      >
                         VIEW ALL
                       </Button>
                     </div>
@@ -212,31 +322,95 @@ const Dashboard = () => {
               onChange={(e) => setNewProjectArticle(e.target.value)}
             /> <br />
 
-            <label htmlFor="project_writer">작성자: </label> <br />
-            <input
-              type="text"
-              id="project_writer"
-              value="작성자 정보 필요"
-              readOnly
-            /> <br />
 
             <div className={styles.modalButtonWrapper} style={{ marginTop: '1.5rem' }}>
-              <button
+            <button
                 id={styles.confirmButton}
-                onClick={() => {
-                  const newProject = {
-                    title: newProjectName.trim(),
-                    desc: newProjectArticle,
-                    img: getRandomImageUrl(), // getRandomImageUrl() 안전한 공식 사이트에서 이미지 가져오는 함수.
-                    members: 0
+                onClick={async () => {
+                  if (!newProjectName.trim() || !newProjectArticle.trim()) {
+                    setWarningModal(true);
+                    return;
                   }
-                  setProjects(prev => [...prev, newProject])
-                  setNewProjectName('')
-                  setNewProjectArticle('')
-                  setcreatNewProjectModal(false)
+                  
+                  try {
+                    setIsCreating(true)
+                    const projectData = {
+                      project_name: newProjectName.trim(),
+                      description: newProjectArticle,
+                      start_date: new Date().toISOString().split('T')[0],
+                      end_date: null
+                    }
+
+                    const response = await fetch('/api/projects', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      credentials: 'include',
+                      body: JSON.stringify(projectData),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`프로젝트 생성 실패: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                      // 새 프로젝트 객체를 미리 생성
+                      const newProject = {
+                        title: projectData.project_name,
+                        desc: projectData.description,
+                        img: getRandomImageUrl(),
+                        members: 0,
+                        project_id: data.project.project_id
+                      }
+
+                      // 상태 업데이트를 한 번에 처리
+                      setProjects(prev => [...prev, newProject])
+                      setNewProjectName('')
+                      setNewProjectArticle('')
+                      setcreatNewProjectModal(false)
+
+                      try {
+                        const logContent = `${user.username} 님이 "${projectData.project_name}" 프로젝트를 생성했습니다.`;
+
+                        await fetch('/api/logs', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({
+                            project_id: data.project.project_id,
+                            user_id: user.user_id,
+                            content: logContent
+                          }),
+                        });
+
+                        console.log('[프론트] 프로젝트 생성 로그 전송 완료');
+                      } catch (logErr) {
+                        console.error('[프론트] 로그 전송 실패:', logErr);
+                      }
+
+                      // RootLayout의 프로젝트 목록 갱신을 위한 커스텀 이벤트 발생
+                      window.dispatchEvent(new CustomEvent('refreshProjectList'));
+
+                      // 약간의 지연 후 페이지 이동
+                      setTimeout(() => {
+                        navigate(`/project/${data.project.project_id}`, {
+                          state: { project: data.project }
+                        });
+
+                        window.location.reload();
+                      }, 200); // 지연 시간을 200ms로 증가
+                    }
+                  } catch (error) {
+                    console.error('[서버] 프로젝트 생성 오류:', error)
+                  } finally {
+                    setIsCreating(false)
+                  }
                 }}
               >
-                추가
+                {isCreating ? '생성 중...' : '추가'}
               </button>
               <button
                 id={styles.cancelButton}
@@ -248,6 +422,22 @@ const Dashboard = () => {
               >
                 취소
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {warningModal && (
+        <div className={warningModalStyles.finalCheckModalOverlay}>
+          <div className={warningModalStyles.finalCheckModalContent}>
+            <h2>경고!</h2> <hr />
+
+            <div className={warningModalStyles.main_text}>
+              <h4>제목과 내용을 입력해주세요.</h4>
+            </div>
+
+            <div className={warningModalStyles.modalButtonWrapper}>
+              <button id={warningModalStyles.confirmButton} onClick={() => {setWarningModal(false);}}>확인</button>
             </div>
           </div>
         </div>
@@ -273,8 +463,8 @@ const RowBox = styled.div`
 
 const ProfileCardWrapper = styled(Card)`
   display: flex;
-  justify-content: center;         /* 콘텐츠 가운데 */
-  align-items: center;             /* 수직 가운데 */
+  justify-content: center;
+  align-items: center;
   max-width: 1100px;
   width: 65%;
   height: 340px;
@@ -291,7 +481,7 @@ const ProfileLeft = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: auto 165px auto auto; /* 왼쪽 여백 없음, 오른쪽 여백 있음 */
+  margin: auto 165px auto auto;
   width: 260px;
   height: 100%;
 `

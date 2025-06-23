@@ -38,6 +38,8 @@ cd backend
 npm install
 npm run start
 ```
+- 백엔드 실행시 과제 제출란에 함께 올린 env파일을 /backend 폴더 아레 .env 파일로 만든 후 실행 시켜주시기 바랍나다.
+ - env 파일 안에 SNS 로그인 시 사용하는 API키가 있어 깃허브에 public으로 공개 할 수 없었습니다.
 
 > 백엔드는 Node.js 서버로 동작하며, 포트와 환경변수는 `.env` 파일로 관리됩니다.
 

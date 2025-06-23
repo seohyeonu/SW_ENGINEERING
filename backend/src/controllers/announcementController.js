@@ -5,38 +5,71 @@ class AnnouncementController {
     async createAnnouncement(req, res) {
         try {
             const { title, content, project_id } = req.body;
-            const author_id = req.user.id; // 인증 미들웨어에서 설정된 사용자 ID
-            
-            // 필수 필드 검증
+            const author_id = req.user.id;
+
             if (!title || !project_id) {
-                return res.status(400).json({
-                    success: false,
-                    message: '제목과 프로젝트 ID는 필수 항목입니다.'
-                });
-            }
-            
-            // 공지사항 생성
-            const announcementId = await Announcement.create({
-                title,
-                content,
-                author_id,
-                project_id
+            return res.status(400).json({
+                success: false,
+                message: '제목과 프로젝트 ID는 필수 항목입니다.',
             });
-            
-            // 생성된 공지사항 조회
+            }
+
+            // 공지 생성
+            const announcementId = await Announcement.create({
+            title,
+            content,
+            author_id,
+            project_id,
+            });
+
             const announcement = await Announcement.findById(announcementId);
-            
+
+            // 🔔 알림 추가 시작
+            const db = require('../config/database');
+            const io = req.app.get('notificationIo');
+
+            // 1. 같은 프로젝트 팀원 조회
+            const [members] = await db.query(
+                `SELECT user_id FROM project_mapping WHERE project_id = ? AND user_id != ?`,
+                [project_id, author_id]
+            );
+
+            for (const member of members) {
+            // 2. 알림 DB 삽입
+            await db.query(
+                `INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)`,
+                [
+                member.user_id,
+                '새 공지사항',
+                `프로젝트에 새로운 공지 "${title}"가 등록되었습니다.`,
+                ]
+            );
+
+            // 3. 소켓 실시간 전송 (io가 있을 때만)
+            if (io) {
+                io.to(`user-${member.user_id}`).emit('new-notification', {
+                    title: '새 공지사항',
+                    message: `프로젝트에 새로운 공지 "${title}"가 등록되었습니다.`,
+                    created_at: new Date(),
+                    is_read: 0,
+                });
+            } else {
+                console.warn('[announcementController] io 객체가 없어 실시간 알림을 보낼 수 없습니다.');
+            }
+            }
+            // 🔔 알림 추가 끝
+
             return res.status(201).json({
-                success: true,
-                message: '공지사항이 성공적으로 생성되었습니다.',
-                announcement
+            success: true,
+            message: '공지사항이 성공적으로 생성되었습니다.',
+            announcement,
             });
         } catch (error) {
             console.error('공지사항 생성 오류:', error);
             return res.status(500).json({
-                success: false,
-                message: '공지사항 생성 중 오류가 발생했습니다.',
-                error: error.message
+            success: false,
+            message: '공지사항 생성 중 오류가 발생했습니다.',
+            error: error.message,
             });
         }
     }

@@ -36,9 +36,12 @@ class Project {
                 [projectId, projectData.manager_id, 'manager']
             );
             
-            // 생성된 프로젝트 정보 조회
+            // 생성된 프로젝트 정보와 매니저 이름 함께 조회
             const [projects] = await pool.query(
-                'SELECT * FROM project WHERE project_id = ?',
+                `SELECT p.*, u.name as manager_name 
+                 FROM project p
+                 JOIN user u ON p.manager_id = u.user_id
+                 WHERE p.project_id = ?`,
                 [projectId]
             );
             
@@ -117,6 +120,11 @@ class Project {
     // 프로젝트 멤버 목록 조회
     static async getMembers(projectId) {
         try {
+            console.log('Project.getMembers - 호출됨:', {
+                projectId: projectId,
+                paramType: typeof projectId
+            });
+
             const [members] = await pool.query(
                 `SELECT u.user_id, u.username, u.name, u.email, u.department, u.phone, pm.role
                  FROM user u
@@ -125,6 +133,12 @@ class Project {
                  ORDER BY pm.role = 'manager' DESC, u.name ASC`,
                 [projectId]
             );
+            
+            console.log('Project.getMembers - 조회 결과:', {
+                projectId: projectId,
+                memberCount: members.length,
+                members: members
+            });
             
             return members;
         } catch (error) {
@@ -165,97 +179,11 @@ class Project {
     }
 
 
-
-
-    /*
-
-    // 프로젝트 업데이트 -> 나중에 자세히 수정하는 걸로
-    static async update(projectId, updateData) {
+    //5.28 작업 내용
+    //프로젝트 삭제 메서드
+    static async deleteProject(projectId) {
         try {
-            const allowedFields = ['project_name', 'description', 'start_date', 'end_date', 'manager_id'];
-            const updates = [];
-            const values = [];
-            
-            // 업데이트할 필드 구성
-            for (const [key, value] of Object.entries(updateData)) {
-                if (allowedFields.includes(key)) {
-                    updates.push(`${key} = ?`);
-                    values.push(value);
-                }
-            }
-            
-            if (updates.length === 0) {
-                return await Project.findById(projectId);
-            }
-            
-            values.push(projectId);
-            
-            // 프로젝트 정보 업데이트
-            await pool.query(
-                `UPDATE project SET ${updates.join(', ')} WHERE project_id = ?`,
-                values
-            );
-            
-            // 매니저 변경 시 프로젝트 매핑 테이블도 업데이트
-            if (updateData.manager_id) {
-                // 기존 매니저 권한 확인
-                const [existingManagers] = await pool.query(
-                    'SELECT * FROM project_mapping WHERE project_id = ? AND role = ?',
-                    [projectId, 'manager']
-                );
-                
-                // 새 매니저가 이미 프로젝트에 속해 있는지 확인
-                const [newManagerMapping] = await pool.query(
-                    'SELECT * FROM project_mapping WHERE project_id = ? AND user_id = ?',
-                    [projectId, updateData.manager_id]
-                );
-                
-                if (newManagerMapping.length > 0) {
-                    // 이미 프로젝트에 속해 있으면 역할만 업데이트
-                    await pool.query(
-                        'UPDATE project_mapping SET role = ? WHERE project_id = ? AND user_id = ?',
-                        ['manager', projectId, updateData.manager_id]
-                    );
-                } else {
-                    // 프로젝트에 속해 있지 않으면 새로 추가
-                    await pool.query(
-                        'INSERT INTO project_mapping (project_id, user_id, role) VALUES (?, ?, ?)',
-                        [projectId, updateData.manager_id, 'manager']
-                    );
-                }
-                
-                // 기존 매니저가 있고 새 매니저와 다르면 역할 변경
-                if (existingManagers.length > 0 && existingManagers[0].user_id !== updateData.manager_id) {
-                    await pool.query(
-                        'UPDATE project_mapping SET role = ? WHERE project_id = ? AND user_id = ?',
-                        ['member', projectId, existingManagers[0].user_id]
-                    );
-                }
-            }
-            
-            return await Project.findById(projectId);
-        } catch (error) {
-            console.error('프로젝트 업데이트 오류:', error);
-            throw error;
-        }
-    }
-
-    // 프로젝트 삭제 -> 나중에 자세히 수정
-    static async delete(projectId) {
-        try {
-            // 프로젝트 매핑 삭제 (CASCADE 설정이 있으면 필요 없음)
-            await pool.query(
-                'DELETE FROM project_mapping WHERE project_id = ?',
-                [projectId]
-            );
-            
-            // 프로젝트 삭제
-            const [result] = await pool.query(
-                'DELETE FROM project WHERE project_id = ?',
-                [projectId]
-            );
-            
-            return result.affectedRows > 0;
+            await pool.query('DELETE FROM project WHERE project_id = ?', [projectId]);
         } catch (error) {
             console.error('프로젝트 삭제 오류:', error);
             throw error;
@@ -263,67 +191,153 @@ class Project {
     }
 
 
-
-    // 프로젝트에 사용자 초대 -> 나중에 자세히 수정
-    static async addUser(projectId, userId, role = 'member') {
+    //5.28 작업 내용
+    //프로젝트 삭제 시 프로젝트 매핑 테이블 내역 삭제
+    static async deleteProjectMapping(projectId) {
         try {
-            // 이미 프로젝트에 속해 있는지 확인
-            const [existingMapping] = await pool.query(
-                'SELECT * FROM project_mapping WHERE project_id = ? AND user_id = ?',
-                [projectId, userId]
-            );
-            
-            if (existingMapping.length > 0) {
-                // 이미 존재하면 역할만 업데이트
-                await pool.query(
-                    'UPDATE project_mapping SET role = ? WHERE project_id = ? AND user_id = ?',
-                    [role, projectId, userId]
-                );
-            } else {
-                // 새로 추가
-                await pool.query(
-                    'INSERT INTO project_mapping (project_id, user_id, role) VALUES (?, ?, ?)',
-                    [projectId, userId, role]
-                );
-            }
-            
-            return true;
+            await pool.query('DELETE FROM project_mapping WHERE project_id = ?', [projectId]);
         } catch (error) {
-            console.error('프로젝트 사용자 추가 오류:', error);
-            throw error;
-        }
-    }
-
-    // 프로젝트에서 사용자 제거 -> 나중에 자세히 수정
-    static async removeUser(projectId, userId) {
-        try {
-            // 프로젝트 매니저인지 확인
-            const [project] = await pool.query(
-                'SELECT manager_id FROM project WHERE project_id = ?',
-                [projectId]
-            );
-            
-            if (project.length > 0 && project[0].manager_id === userId) {
-                throw new Error('프로젝트 매니저는 제거할 수 없습니다.');
-            }
-            
-            // 사용자 제거
-            const [result] = await pool.query(
-                'DELETE FROM project_mapping WHERE project_id = ? AND user_id = ?',
-                [projectId, userId]
-            );
-            
-            return result.affectedRows > 0;
-        } catch (error) {
-            console.error('프로젝트 사용자 제거 오류:', error);
+            console.error('프로젝트 매핑 삭제 오류:', error);
             throw error;
         }
     }
 
 
+    //프로젝트의 매니저 맞는지 확인 하는 쿼리
+    static async isManager(projectId, userId) {
+        
+        try {
+            const [result] = await pool.query('SELECT * FROM project WHERE project_id = ? AND manager_id = ?', [projectId, userId]);
+            return result.length > 0;
+        } catch (error) {
+            console.error('프로젝트 매니저 확인 오류:', error);
+            throw error;
+        }
+    }
 
-    */
 
+    //프로젝트 팀원 초대
+    static async inviteMemberByEmail(projectId, email, fields) {
+        const connection = await pool.getConnection();
+
+        try {
+             await connection.beginTransaction();
+
+        // 1. 이메일로 user_id 조회
+        const [userRows] = await connection.query(
+            'SELECT user_id FROM user WHERE email = ?',
+            [email]
+        );
+
+        if (userRows.length === 0) {
+            throw new Error('해당 이메일을 가진 사용자가 존재하지 않습니다.');
+        }
+
+        const userId = userRows[0].user_id;
+
+        // 2. 이미 초대되었는지 확인
+        const [existingRows] = await connection.query(
+            'SELECT * FROM project_mapping WHERE project_id = ? AND user_id = ?',
+            [projectId, userId]
+        );
+
+        if (existingRows.length > 0) {
+            throw new Error('이미 이 프로젝트에 초대된 사용자입니다.');
+        }
+
+        // 3. 초대 정보 추가
+        await connection.query(
+            'INSERT INTO project_mapping (project_id, user_id, role, fields) VALUES (?, ?, ?, ?)',
+            [projectId, userId, 'member', fields]
+        );
+
+        await connection.commit();
+        return { success: true, userId };
+
+        } catch (error) {
+            await connection.rollback();
+            console.error('팀원 초대 중 오류 발생:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+  
+    //팀원 목록창에서 이용할 팀원목록 조회 함수
+    static async getProjectMemerListAtTeam(projectId) {
+        const connection = await pool.getConnection();
+        try {
+            console.log('[ProjectModel] getProjectMemerListAtTeam 호출됨 - projectId:', projectId);
+            
+            const query = `
+                SELECT 
+                    u.user_id as id,
+                    u.name,
+                    u.status,
+                    pm.fields,
+                    pm.role
+                FROM project_mapping pm
+                JOIN user u ON pm.user_id = u.user_id
+                WHERE pm.project_id = ?
+                ORDER BY pm.role = 'manager' DESC, u.name ASC
+            `;
+            
+            console.log('[ProjectModel] 실행할 쿼리:', query);
+            console.log('[ProjectModel] 쿼리 파라미터:', [projectId]);
+            
+            const [rows] = await connection.query(query, [projectId]);
+            
+            console.log('[ProjectModel] 쿼리 결과:', rows);
+            
+            return rows;
+        } catch (error) {
+            console.error('[ProjectModel] 프로젝트 멤버 조회 중 오류:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }   
+    }  
+
+    // 프로젝트 멤버 삭제
+    static async deleteProjectMembers(projectId, memberIds) {
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            // 매니저는 삭제할 수 없도록 체크
+            const [managers] = await connection.query(
+                'SELECT user_id FROM project_mapping WHERE project_id = ? AND role = ? AND user_id IN (?)',
+                [projectId, 'manager', memberIds]
+            );
+
+            if (managers.length > 0) {
+                throw new Error('프로젝트 매니저는 삭제할 수 없습니다.');
+            }
+
+            // 선택된 멤버들 삭제
+            await connection.query(
+                'DELETE FROM project_mapping WHERE project_id = ? AND user_id IN (?) AND role != ?',
+                [projectId, memberIds, 'manager']
+            );
+
+            await connection.commit();
+            
+            // 삭제된 행 수 반환
+            const [result] = await connection.query(
+                'SELECT ROW_COUNT() as deletedCount'
+            );
+            return result[0].deletedCount;
+
+        } catch (error) {
+            await connection.rollback();
+            console.error('프로젝트 멤버 삭제 중 오류:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+    
 }
 
 module.exports = Project;

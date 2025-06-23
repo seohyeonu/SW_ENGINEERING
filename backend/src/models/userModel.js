@@ -12,23 +12,36 @@ class User {
         this.department = user.department;
         this.status = user.status;
         this.created_at = user.created_at;
+        this.description = user.description;
+        this.google_id = user.google_id;
+        this.github_id = user.github_id;
+        this.profile_image = user.profile_image;
+        this.oauth_provider = user.oauth_provider;
     }
 
     // 사용자 생성
     static async create(userData) {
         try {
-            const hashedPassword = await bcrypt.hash(userData.password, 10);
+            const hashedPassword = userData.password ? await bcrypt.hash(userData.password, 10) : null;
             
-            // 사용자 생성 - 이메일 필드 추가
+            // 사용자 생성 - 소셜 로그인 필드 추가
             const [result] = await pool.query(
-                'INSERT INTO user (name, username, email, password, phone, department) VALUES (?, ?, ?, ?, ?, ?)',
+                `INSERT INTO user (
+                    name, username, email, password, phone, department, description,
+                    google_id, github_id, profile_image, oauth_provider
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    userData.name,      // 이름
-                    userData.username,   // 사용자명
-                    userData.email || null, // 이메일
-                    hashedPassword,      // 비밀번호
+                    userData.name,
+                    userData.username,
+                    userData.email || null,
+                    hashedPassword,
                     userData.phone || null,
-                    userData.department || null
+                    userData.department || null,
+                    userData.description || null,
+                    userData.google_id || null,
+                    userData.github_id || null,
+                    userData.profile_image || null,
+                    userData.oauth_provider || 'local'
                 ]
             );
             
@@ -104,7 +117,6 @@ class User {
     async comparePassword(candidatePassword) {
         try {
             console.log('Comparing passwords for user:', this.username);
-            console.log('Candidate password:', candidatePassword);
             console.log('Stored hashed password:', this.password);
             const isMatch = await bcrypt.compare(candidatePassword, this.password);
             console.log('Password match result:', isMatch);
@@ -113,6 +125,63 @@ class User {
             console.error('Error in comparePassword:', error);
             throw error;
         }
+    }
+
+    // 이메일로 사용자 찾기 (소셜 로그인용)
+    static async findByEmail(email) {
+        try {
+            const [users] = await pool.query(
+                'SELECT * FROM user WHERE email = ?',
+                [email]
+            );
+            return users[0] ? new User(users[0]) : null;
+        } catch (error) {
+            console.error('Error in findByEmail:', error);
+            throw error;
+        }
+    }
+
+    // Google ID로 사용자 찾기
+    static async findByGoogleId(googleId) {
+        try {
+            const [users] = await pool.query(
+                'SELECT * FROM user WHERE google_id = ?',
+                [googleId]
+            );
+            return users[0] ? new User(users[0]) : null;
+        } catch (error) {
+            console.error('Error in findByGoogleId:', error);
+            throw error;
+        }
+    }
+
+    // 소셜 로그인 정보 업데이트
+    async updateOAuthInfo(provider, providerId, profileImage = null) {
+        const updates = {};
+        if (provider === 'google') {
+            updates.google_id = providerId;
+        } else if (provider === 'github') {
+            updates.github_id = providerId;
+        }
+        if (profileImage) {
+            updates.profile_image = profileImage;
+        }
+        updates.oauth_provider = provider;
+
+        const setClause = Object.entries(updates)
+            .map(([key]) => `${key} = ?`)
+            .join(', ');
+        const values = [...Object.values(updates), this.user_id];
+
+        const [result] = await pool.query(
+            `UPDATE user SET ${setClause} WHERE user_id = ?`,
+            values
+        );
+
+        if (result.affectedRows > 0) {
+            Object.assign(this, updates);
+        }
+        return result.affectedRows > 0;
     }
 
     // 민감한 정보를 제외한 사용자 정보 반환
@@ -136,7 +205,6 @@ class User {
     static async updatePassword(userId, hashedPassword) {
         await pool.query('UPDATE user SET password = ? WHERE user_id = ?', [hashedPassword, userId]);
     }
-
 }
 
 module.exports = User;

@@ -24,11 +24,30 @@ function SignInAndSignUp() {
 
   const { login } = useAuthStore(); // 상태 저장 함수 불러오기
 
+  // URL 파라미터 체크를 위한 useEffect 추가
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isGoogleSignup = params.get('isGoogleSignup');
+    
+    if (isGoogleSignup === 'true') {
+      // Google 회원가입 정보로 폼 초기화
+      setRegisterEmail(params.get('email') || '');
+      setRegisterName(params.get('name') || '');
+      setIsActive(true); // 회원가입 폼으로 전환
+      
+      // Google ID 저장을 위한 state 추가
+      setGoogleId(params.get('google_id'));
+    }
+  }, []);
+
+  // Google ID를 저장하기 위한 state 추가
+  const [googleId, setGoogleId] = useState('');
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    console.log('▶️ 로그인 직전 값', loginUsername, loginPassword);
+
     try {
-      const response = await fetch('/api/auth/login', {  // 백엔드 라우트 설정에 맞춘 URL
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
@@ -48,17 +67,28 @@ function SignInAndSignUp() {
       }
 
       // 토큰을 쿠키에 저장
-      if (data.token) {
-        Cookies.set('token', data.token, { 
-          expires: 1,
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'Lax'
-        });
-      }
+      Cookies.set('token', data.token, {
+        expires: 1,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax'
+      });
 
-      login(data.user);
-      navigate('/dashboard');
+      // 로그인 상태 업데이트 (구글 로그인과 동일한 방식)
+      login({ 
+        user: {
+          ...data.user,
+          oauth_provider: 'local'
+        }, 
+        token: data.token, 
+        type: 'local' 
+      });
+      
+      // 리다이렉트 전에 상태 업데이트가 완료되도록 setTimeout 사용
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 100);
+      
     } catch (error) {
       console.error('로그인 중 오류:', error);
       alert('서버 연결에 실패했습니다. 서버가 실행 중인지 확인해주세요.');
@@ -69,17 +99,13 @@ function SignInAndSignUp() {
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
-    // 비밀번호 확인
     if (registerPassword !== registerPasswordCheck) {
       setPasswordError('비밀번호가 일치하지 않습니다.');
       return;
-    } else {
-      setPasswordError(''); // 일치하면 에러 메시지 초기화
     }
 
-    // fetch 경로가 이상함...... 이거 고쳐야함
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -88,8 +114,9 @@ function SignInAndSignUp() {
           username: registerUsername,
           email: registerEmail,
           password: registerPassword,
-          phone: isPhoneNum.replace(/-/g, ''), // 하이픈 제거
-          department: registerDepartment
+          phone: isPhoneNum.replace(/-/g, ''),
+          department: registerDepartment,
+          google_id: googleId || null  // 소셜 로그인 ID 추가
         }),
       });
 
@@ -101,13 +128,54 @@ function SignInAndSignUp() {
       }
 
       alert('회원가입이 완료되었습니다. 로그인해주세요.');
-      handleToggleToLogin(); // 로그인 화면으로 전환
+      handleToggleToLogin();
     } catch (error) {
       console.error('회원가입 중 오류:', error);
       alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
+  // 소셜 로그인 핸들러 추가
+  const handleSocialLogin = (provider) => {
+    // 현재 URL을 저장하여 소셜 로그인 후 돌아올 수 있도록 함
+    sessionStorage.setItem('redirectUrl', window.location.pathname);
+    
+    // 소셜 로그인 URL로 리다이렉트
+    window.location.href = `/api/auth/${provider}`;
+  };
+
+  // 소셜 로그인 콜백 처리
+  useEffect(() => {
+    // URL에서 토큰과 사용자 정보 파라미터 확인
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    
+    if (token) {
+      // 토큰을 쿠키에 저장
+      Cookies.set('token', token, {
+        expires: 1,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax'
+      });
+
+      // 사용자 정보 객체 생성
+      const user = {
+        user_id: params.get('user_id'),
+        username: params.get('username'),
+        email: params.get('email'),
+        name: params.get('name'),
+        phone: params.get('phone'),
+        department: params.get('department'),
+        status: params.get('status'),
+        created_at: params.get('created_at')
+      };
+
+      // 상태 업데이트 및 리다이렉트
+      login(user);
+      navigate('/dashboard');
+    }
+  }, [navigate, login]);
 
   // #. 회원가입과 로그인 창 변경 로직
   const handleToggleToRegister = () => setIsActive(true);
@@ -258,7 +326,15 @@ function SignInAndSignUp() {
           </div>
           <div className={styles['input-box']}>
             <i className="bx bxs-lock-alt"></i>
-            <input type="password" name="password" placeholder="Password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} required />
+            <input 
+              type="password" 
+              name="password" 
+              placeholder="Password" 
+              value={loginPassword} 
+              onChange={(e) => setLoginPassword(e.target.value)} 
+              autoComplete="current-password"
+              required 
+            />
           </div>
           <div className={styles['forgot-link']}>
             <Link to="#">Forgot Password?</Link>
@@ -266,8 +342,20 @@ function SignInAndSignUp() {
           <button type="submit" className={styles.btn}>Login</button>
           <p>or login with social platforms</p>
           <div className={styles['social-icons']}>
-            <Link to="#"><i className="bx bxl-google"></i></Link>
-            <Link to="#"><i className="bx bxl-github"></i></Link>
+            <button
+              type="button"
+              onClick={() => handleSocialLogin('google')}
+              className={styles['social-btn']}
+            >
+              <i className="bx bxl-google"></i>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSocialLogin('github')}
+              className={styles['social-btn']}
+            >
+              <i className="bx bxl-github"></i>
+            </button>
             <Link to="#"><i className="bx bxl-instagram"></i></Link>
           </div>
         </form>
@@ -345,6 +433,7 @@ function SignInAndSignUp() {
               placeholder="Password"
               value={registerPassword}
               onChange={(e) => setRegisterPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
           </div>
@@ -359,6 +448,7 @@ function SignInAndSignUp() {
                 setRegisterPasswordCheck(e.target.value);
                 setPasswordError(''); // 비밀번호 확인 시 에러 메시지 초기화
               }}
+              autoComplete="new-password"
               required
             />
           </div>
@@ -366,8 +456,20 @@ function SignInAndSignUp() {
           <button type="submit" className={styles.btn}>Sign up</button>
           <p>or register with social platforms</p>
           <div className={styles['social-icons']}>
-            <Link to="#"><i className="bx bxl-google"></i></Link>
-            <Link to="#"><i className="bx bxl-github"></i></Link>
+            <button
+              type="button"
+              onClick={() => handleSocialLogin('google')}
+              className={styles['social-btn']}
+            >
+              <i className="bx bxl-google"></i>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSocialLogin('github')}
+              className={styles['social-btn']}
+            >
+              <i className="bx bxl-github"></i>
+            </button>
             <Link to="#"><i className="bx bxl-instagram"></i></Link>
           </div>
         </form>

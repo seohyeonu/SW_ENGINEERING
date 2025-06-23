@@ -132,18 +132,17 @@ class AuthController {
                 { expiresIn: '24h' }
             );
 
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'Lax',
-                maxAge: 24 * 60 * 60 * 1000 // 24시간
-            });
-
+            // 구글 로그인과 동일한 형식으로 응답
+            userData.oauth_provider = 'local';  // 로그인 타입 명시
+            
             res.status(200).json({
                 success: true,
                 message: '로그인 성공',
                 token,
-                user: userData  // 수정된 사용자 데이터 형식
+                user: {
+                    ...userData,
+                    profile_image: user.profile_image || '',  // 프로필 이미지 필드 추가
+                }
             });
 
         } catch (error) {
@@ -158,24 +157,30 @@ class AuthController {
     // 로그아웃
     async logout(req, res) {
         try {
-            const { username } = req.body;
-
-            if (!username) {
-                return res.status(400).json({
-                    success: false,
-                    message: '사용자 정보가 필요합니다.'
-                });
-            }
-
-            const user = await User.findByUsername(username);
-            if (user) {
-                await user.updateStatus('offline');
+            // 토큰에서 사용자 ID 추출
+            const token = req.cookies.token;
+            if (token) {
+                try {
+                    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                    // 사용자 찾기
+                    const user = await User.findById(decoded.id);
+                    if (user) {
+                        // 사용자 상태를 offline으로 업데이트
+                        await user.updateStatus('offline');
+                    }
+                } catch (tokenError) {
+                    console.log('Token verification failed:', tokenError);
+                }
             }
 
             // 쿠키 삭제
-            res.clearCookie('token');
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Lax'
+            });
 
-            res.json({
+            res.status(200).json({
                 success: true,
                 message: '로그아웃 되었습니다.'
             });
@@ -260,58 +265,46 @@ class AuthController {
             });
         }
     }
-    async oauthCallback(req, res) {
-    // Passport에서 세팅한 req.user
-    const token = jwt.sign(
-      { userId: req.user.user_id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-    // 쿠키에 토큰 저장 (혹은 JSON으로 반환)
-    res.cookie('token', token, { httpOnly: true });
-    return res.redirect('http://localhost:5173');
-  }
 
     // 2025.05.25 오후 5시 10분 추가
     // 현재 비밀번호 검증
     async verifyPassword(req, res) {
-    try {
-        const userId = req.user?.id;
-        const { currentPassword } = req.body;
-
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
-
-        const isMatch = await user.comparePassword(currentPassword);
-        if (!isMatch) return res.status(400).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
-
-        return res.json({ success: true, message: '비밀번호 확인 완료' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: '서버 오류' });
+        try {
+            const userId = req.user?.id;
+            const { currentPassword } = req.body;
+    
+            const user = await User.findById(userId);
+            if (!user) return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    
+            const isMatch = await user.comparePassword(currentPassword);
+            if (!isMatch) return res.status(400).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
+    
+            return res.json({ success: true, message: '비밀번호 확인 완료' });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: '서버 오류' });
+        }
     }
-    }
-
+    
     // 새 비밀번호 변경
     async changePassword(req, res) {
-    try {
-        const userId = req.user?.id;
-        const { newPassword } = req.body;
-
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
-
-        const bcrypt = require('bcryptjs');
-        const hashed = await bcrypt.hash(newPassword, 10);
-        await User.updatePassword(userId, hashed);
-
-        return res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: '서버 오류' });
+        try {
+            const userId = req.user?.id;
+            const { newPassword } = req.body;
+    
+            const user = await User.findById(userId);
+            if (!user) return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    
+            const bcrypt = require('bcryptjs');
+            const hashed = await bcrypt.hash(newPassword, 10);
+            await User.updatePassword(userId, hashed);
+    
+            return res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: '서버 오류' });
+        }
     }
-    }
-
 }
 
 module.exports = new AuthController();

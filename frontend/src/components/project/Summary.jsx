@@ -3,11 +3,16 @@ import styled from 'styled-components';
 import { EllipsisOutlined } from '@ant-design/icons';
 import { Dropdown, Menu } from 'antd';
 import styles from './css_folder/Summary.module.css';
+import warningModalStyles from '../../common/RootLayout.module.css'
+import { useAuthStore } from '../../store/authStore';
 
 const Summary = ({ project }) => {
+  const { user } = useAuthStore();
+  
   const [description, setDescription] = useState(project?.description || '');
   const [editedDescription, setEditedDescription] = useState(description);
   const [editTaskModal, setEditTaskModal] = useState(false);
+  const [warningModal, setWarningModal] = useState(false);
 
   useEffect(() => {
     setDescription(project?.description || '');
@@ -38,11 +43,27 @@ const Summary = ({ project }) => {
       }
   
       const data = await response.json();
+
+      // 로그 기록 요청
+      const logContent = `[${project?.project_name || '알 수 없는'}] 프로젝트의 개요가 수정되었습니다.`;
+      await fetch('/api/logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          project_id: project.project_id,
+          user_id: user.user_id, // ← 로그인된 사용자 ID로 수정
+          content: logContent,
+        }),
+      });
+      
       // 성공 시 화면에 반영
       setDescription(data.project.description);
       setEditTaskModal(false);
     } catch (error) {
-      alert('프로젝트 설명 수정 중 오류가 발생했습니다.');
+      setWarningModal(true);
       console.error(error);
     }
   };
@@ -113,6 +134,22 @@ const Summary = ({ project }) => {
               <button id={styles.cancelButton} onClick={() => setEditTaskModal(false)}>
                 닫기
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {warningModal && (
+        <div className={warningModalStyles.finalCheckModalOverlay}>
+          <div className={warningModalStyles.finalCheckModalContent}>
+            <h2>경고!</h2> <hr />
+
+            <div className={warningModalStyles.main_text}>
+              <h4>내용을 입력해주세요.</h4>
+            </div>
+
+            <div className={warningModalStyles.modalButtonWrapper}>
+              <button id={warningModalStyles.confirmButton} onClick={() => {setWarningModal(false);}}>확인</button>
             </div>
           </div>
         </div>

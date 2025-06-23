@@ -1,50 +1,93 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import Cookies from 'js-cookie'
 
 export const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       isAuthenticated: false,
       user: null,
-      login: (userData) => set({ isAuthenticated: true, user: userData }),
-      logout: () => {
-        console.log('로그아웃 시작: 백엔드 API 호출');
-        
-        // 현재 사용자 정보 가져오기
-        const currentUser = get().user;
-        const username = currentUser?.username;
-        
-        // 백엔드 로그아웃 API 호출 // ㅅㅂ 경로 설정 좀 ....
-        fetch('/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ username })
-        })
-        .then(response => {
-          console.log('백엔드 로그아웃 응답:', response.status);
+      loginType: null, // 'local' 또는 'social'
+      login: ({ user, token, type = 'local' }) => {
+        // 로컬 로그인인 경우에만 프론트엔드에서 토큰을 설정
+        if (type === 'local' && token) {
+          Cookies.set('token', token, {
+            expires: 1,
+            path: '/',
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Lax'
+          });
+        }
+        set({ isAuthenticated: true, user, loginType: type });
+      },
+      logout: async () => {
+        try {
+          const response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            throw new Error(`Logout failed: ${response.status}`);
+          }
+
+          // 쿠키에서 토큰 제거 (로컬/소셜 모두)
+          Cookies.remove('token', { path: '/' });
           
           // 상태 초기화
-          set({ isAuthenticated: false, user: null });
-          console.log('로그아웃 완료: 상태 초기화됨');
-        })
-        .catch(error => {
-          console.error('로그아웃 API 호출 중 오류:', error);
+          set({ isAuthenticated: false, user: null, loginType: null });
           
+          // localStorage에서 persist 데이터 제거
+          window.localStorage.removeItem('wiffle-storage');
+          
+          return true;
+        } catch (error) {
+          console.error('로그아웃 API 호출 중 오류:', error);
           // API 호출 실패해도 상태는 초기화
-          set({ isAuthenticated: false, user: null });
-          console.log('로그아웃 부분 완료: 상태만 초기화됨');
-        });
+          set({ isAuthenticated: false, user: null, loginType: null });
+          window.localStorage.removeItem('wiffle-storage');
+          return false;
+        }
       },
-
-      // 2025.5.25.6시 15분 추가
-      setUser: (newUserData) => set({ user: newUserData }),
-
+      setUser: (userData) => set({ user: userData }),
     }),
     {
-      name: 'wiffle-storage', // 로컬 스토리지에 저장될 키 이름
+      name: 'wiffle-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+        user: state.user,
+        loginType: state.loginType
+      }),
+      onRehydrateStorage: () => (state) => {
+        // 토큰 체크
+        const token = Cookies.get('token');
+        
+        if (!token) {
+          state.isAuthenticated = false;
+          state.user = null;
+          state.loginType = null;
+          return;
+        }
+
+        // localStorage에서 사용자 정보 복원
+        const storedUser = localStorage.getItem('wiffle-storage');
+        if (storedUser) {
+          try {
+            const parsedData = JSON.parse(storedUser);
+            if (parsedData.state && parsedData.state.user) {
+              state.isAuthenticated = true;
+              state.user = parsedData.state.user;
+              state.loginType = parsedData.state.loginType;
+            }
+          } catch (error) {
+            console.error('Failed to parse stored user data:', error);
+            state.isAuthenticated = false;
+            state.user = null;
+            state.loginType = null;
+          }
+        }
+      }
     }
   )
 )

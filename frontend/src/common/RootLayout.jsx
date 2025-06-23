@@ -4,19 +4,44 @@ import { useAuthStore } from '../store/authStore'
 import styled from 'styled-components'
 import finalCheckModalStyles from './RootLayout.module.css'
 import alertStyles from './AlertDropdown.module.css'
-import { Breadcrumb, Layout, Menu } from 'antd';
-import { UserOutlined, HomeOutlined, FolderOpenOutlined, BellOutlined, MoreOutlined, LogoutOutlined, HistoryOutlined  } from '@ant-design/icons';
+import warningModalStyles from '../common/RootLayout.module.css'
+import { Breadcrumb, Layout, Menu, Modal, Dropdown, App } from 'antd';
+import { UserOutlined, HomeOutlined, FolderOpenOutlined, BellOutlined, MoreOutlined, LogoutOutlined, HistoryOutlined } from '@ant-design/icons';
 import { Header } from 'antd/es/layout/layout'
 import Sider from 'antd/es/layout/Sider'
 import styles from './RootLayoutOfModal.module.css'
 import ProfileSettingsModal from '../pages/ProfileSettings'
+import { io } from 'socket.io-client';
 
 const RootLayout = () => {
+  const { message } = App.useApp();
+  const socket = useRef(null);
+  // 개발 환경에서만 로그 출력
+  if (process.env.NODE_ENV === 'development') {
+    console.log('=== RootLayout 컴포넌트 렌더링 시작 ===');
+  }
   const [profileModalVisible, setProfileModalVisible] = useState(false)
-
-  console.log('=== RootLayout 컴포넌트 렌더링 시작 ===');
-  const { user, logout, setUser } = useAuthStore();
+  const { user, logout, setUser } = useAuthStore()
   const navigate = useNavigate()
+  const [isHistorySidebarOpen, setIsHistorySidebarOpen] = useState(false)
+  const [profileSettingsVisible, setProfileSettingsVisible] = useState(false);
+
+  useEffect(() => {
+    if (user && user.user_id) {
+      socket.current = io('http://localhost:3000');  // 백엔드 주소로 맞춰주면 됨.
+      socket.current.emit('register', user.user_id);
+
+      socket.current.on('new-notification', (data) => {
+        console.log('📩 실시간 알림 수신:', data);
+        setNotifications((prev) => [data, ...prev]);
+      });
+    }
+
+    return () => {
+      if (socket.current) socket.current.disconnect();
+    };
+  }, [user]);
+
 
   const handleLogout = () => {
     setFinalCheckModal(true)
@@ -35,91 +60,43 @@ const RootLayout = () => {
   // 프로젝트 목록 상태 - 빈 배열로 초기화하고 서버에서 가져온 데이터로 채움
   const [projectList, setProjectList] = useState([]);
 
-  /*
-  // 이전 하드코딩된 데이터 (참고용)
-  const oldProjectData = [
-    {
-      id: '5',  //project id 
-      name: '프로젝트 Alpha', //project title
-      article: 'Alpha 프로젝트 설명', // project description
-      author: 'User1', // project manager_id = user.id  조인해서 u.name 가져오기
-      
-      //업무 테이블에서 가져오기
-      tasks: [
-        {
-          id: 1,
-          title: 'Alpha 서버 연동',
-          members: ['User1'],
-          dueDate: '2025-06-01',
-          content: 'Alpha API 연동',
-          createdAt: '2025-05-21',
-          updatedAt: '2025-05-21',
-          views: 0,
+
+
+
+  // 1. 프로젝트 목록 가져오기 함수를 별도로 분리
+  const fetchProjectsFromServer = async () => {
+    try {
+      console.log('[서버] 프로젝트 목록 요청 시작');
+      const response = await fetch('/api/projects', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
         }
-      ],
+      });
 
-      //공지 테이블에서 가져오기
-      notices: [
-      ]
-    }, // 플젝1에 대한 내용
-    {
-      id: 2,
-      name: '프로젝트 Beta',
-      article: 'Beta 프로젝트 설명',
-      author: 'User2',
-      tasks: [
-        {
-          id: 1,
-          title: 'Beta 디자인',
-          members: ['User3'],
-          dueDate: '2025-06-03',
-          content: 'Figma 작업',
-          createdAt: '2025-05-21',
-          updatedAt: '2025-05-22',
-          views: 0,
-        }
-      ],
-      notices: []
-    } // 플젝2에 대한 내용
-  ];
-*/
+      console.log('[서버] 응답 상태:', response.status);
 
-
-  // 1. 프로젝트 목록 가져오기 - 서버에서 실제 데이터 가져오기
-  useEffect(() => {
-    // 서버에서 프로젝트 목록 가져오기
-    const fetchProjectsFromServer = async () => {
-      try {
-        console.log('[서버] 프로젝트 목록 요청 시작');
-        const response = await fetch('/api/projects', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        console.log('[서버] 응답 상태:', response.status);
-
-        if (!response.ok) {
-          throw new Error(`프로젝트 목록 가져오기 실패: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('[서버] 응답 데이터:', data);
-
-        if (data.success) {
-          setProjectList(data.projects);
-          console.log('[서버] 프로젝트 목록 가져오기 성공:', data.projects);
-        } else {
-          console.error('[서버] 프로젝트 목록 가져오기 실패:', data.message);
-        }
-      } catch (error) {
-        console.error('[서버] 프로젝트 목록 가져오기 오류:', error);
+      if (!response.ok) {
+        throw new Error(`프로젝트 목록 가져오기 실패: ${response.status} - ${response.statusText}`);
       }
-    };
-    
-    // 서버에서 프로젝트 목록 가져오기 실행
+
+      const data = await response.json();
+      console.log('[서버] 응답 데이터:', data);
+
+      if (data.success) {
+        setProjectList(data.projects);
+        console.log('[서버] 프로젝트 목록 가져오기 성공:', data.projects);
+      } else {
+        console.error('[서버] 프로젝트 목록 가져오기 실패:', data.message);
+      }
+    } catch (error) {
+      console.error('[서버] 프로젝트 목록 가져오기 오류:', error);
+    }
+  };
+
+  // 컴포넌트 마운트 시 프로젝트 목록 가져오기
+  useEffect(() => {
     fetchProjectsFromServer();
   }, []); // 컴포넌트 마운트 시 한 번만 실행
   
@@ -221,8 +198,8 @@ const RootLayout = () => {
     {
       key: 'home',
       icon: <HomeOutlined />,
-      label: 'Home',
-      onClick: () => navigate('/dashboard'),
+      label: '홈',
+      onClick: () => navigate('/dashboard')
     },
     {
       key: 'project',
@@ -313,9 +290,88 @@ const RootLayout = () => {
   };
 
   const [finalCheckModal, setFinalCheckModal] = useState(false);
+  const [warningModal, setWarningModal] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
-
   const alertRef = useRef(null);
+  const hasUnreadNotifications = notifications.some(n => n.is_read === 0);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await res.json();
+      setNotifications(data);
+    } catch (err) {
+      console.error('알림 가져오기 실패', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications(); // 최초 1회 실행
+
+    const interval = setInterval(() => {
+      fetchNotifications(); // 10초마다 새로고침
+    }, 10000); // 10000ms = 10초
+
+    return () => clearInterval(interval); // 언마운트 시 정리
+  }, []);
+
+
+  const markAsRead = async (id) => {
+    try {
+      await fetch(`/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      // 프론트 상태도 업데이트
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
+      );
+    } catch (err) {
+      console.error('알림 읽음 처리 실패', err);
+    }
+  };
+
+
+  const deleteNotification = async (id) => {
+    try {
+      await fetch(`/api/notifications/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error('알림 삭제 실패', err);
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    try {
+      await Promise.all(
+        notifications.map((n) =>
+          fetch(`/api/notifications/${n.id}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          })
+        )
+      );
+      setNotifications([]); // 프론트 상태 비움
+    } catch (err) {
+      console.error('전체 알림 삭제 실패', err);
+    }
+  };
+
+  
   
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -333,49 +389,109 @@ const RootLayout = () => {
     };
   }, [alertModal]);
 
+  // 5.29 작업 내용 // 5.28 작업 내용
+  // 프로젝트 삭제 API 함수 추가
+  const deleteProject = async (projectId) => {
+    try {
+      console.log('[프론트엔드] 프로젝트 삭제 시작:', { 
+        projectId,
+        currentUser: user,
+        isAuthenticated: !!user
+      });
+
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'  // 쿠키에 있는 JWT 토큰을 함께 전송
+      });
+
+      console.log('[프론트엔드] 삭제 요청 응답:', { 
+        status: response.status, 
+        statusText: response.statusText 
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('[프론트엔드] 삭제 요청 실패:', errorData);
+        throw new Error(errorData.message || '프로젝트 삭제에 실패했습니다.');
+      }
+
+      const result = await response.json();
+      console.log('[프론트엔드] 삭제 요청 성공:', result);
+      return true;
+    } catch (error) {
+      console.error('[프론트엔드] 프로젝트 삭제 중 오류 발생:', error);
+      message.error('프로젝트 삭제에 실패했습니다.');
+      return false;
+    }
+  };
+
+
+
+
   return (
     <OutterContainer>
       <SHeader>
         <div className="logo">Wiffle</div>
         {/*종 모양 아이콘 부분*/}
         <div className={alertStyles.alertContainer} ref={alertRef}>
-          <BellOutlined style={{ fontSize: '20px' }} onClick={() => setAlertModal(!alertModal)} />
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <BellOutlined onClick={() => setAlertModal(!alertModal)} style={{ fontSize: '20px' }} />
+          {hasUnreadNotifications && (
+            <span className={alertStyles.notificationDot}></span>
+          )}
+        </div>
 
           {alertModal && (
             <div className={alertStyles.alertDropdown}>
-              <h4>🔔 알림</h4>
+              <div className={alertStyles.alertHeader}>
+                <h4 className={alertStyles.alertHeading}>🔔 알림</h4>
+                {notifications.length > 0 && (
+                  <button
+                    onClick={deleteAllNotifications}
+                    className={alertStyles.deleteAllButton}
+                  >
+                    전체 삭제
+                  </button>
+                )}
+              </div>
               <hr />
-
               <div className={alertStyles.alertList}>
-                <div className={alertStyles.alertItem}>
-                  <div className={alertStyles.alertTitle}>
-                    📌 <strong>서버 및 연동하기</strong>
+                {notifications.length === 0 ? (
+                  <div className={alertStyles.alertItem} style={{ textAlign: 'center', color: '#888' }}>
+                    알림이 없습니다.
                   </div>
-                  <div className={alertStyles.alertSub}>마감까지 <span className={alertStyles.alertDeadline}>D-1</span></div>
-                </div>
-
-                <div className={alertStyles.alertItem}>
-                  <div className={alertStyles.alertTitle}>
-                    🗨️ <strong>User 2</strong> 님이 <strong>project2</strong> 글에 댓글을 남겼습니다.
-                  </div>
-                  <div className={alertStyles.alertSub}>"정말 괜찮은데요!"</div>
-                </div>
-
-                <h5 className={alertStyles.sectionTitle}>📅 이번 주 나의 업무</h5>
-                <table className={alertStyles.alertTable}>
-                  <thead>
-                    <tr>
-                      <th>프로젝트</th>
-                      <th>날짜</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>명세서 작성하기</td>
-                      <td>07-20(Tue) 09:00 <span className={alertStyles.alertDeadline}>D-2</span></td>
-                    </tr>
-                  </tbody>
-                </table>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`${alertStyles.alertItem} ${n.is_read ? '' : alertStyles.unread}`}
+                      onClick={() => markAsRead(n.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className={alertStyles.alertTitleRow}>
+                        <div className={alertStyles.alertTitle}>
+                          📌 <strong>{n.title}</strong>
+                        </div>
+                        <button
+                          className={alertStyles.deleteButton}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(n.id);
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className={alertStyles.alertSub}>{n.message}</div>
+                      <div className={alertStyles.alertSub} style={{ fontSize: '11px', color: '#aaa' }}>
+                        {new Date(n.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -390,7 +506,7 @@ const RootLayout = () => {
           </div>
         </UserBox>
         <div className='kebab'>
-          <MoreOutlined style={{ fontSize: '20px' }} onClick={() => setProfileModalVisible(true)} />
+            <MoreOutlined style={{ fontSize: '20px' }} onClick={() => setProfileModalVisible(true)} />
         </div>
       </SHeader>
       <InnerContainer>
@@ -399,7 +515,6 @@ const RootLayout = () => {
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {/* 상단 메뉴 스크롤 가능하게 */}
           <div style={{ flex: 1, overflowY: 'auto' }}>
             <SMenu
               mode="inline"
@@ -408,9 +523,7 @@ const RootLayout = () => {
               items={navItems}
             />
           </div>
-
-          {/* 로그아웃 버튼 조정 */}
-          <div style={{ padding: '12px 0 24px', borderTop: '1px solid #eee' }}>
+          <div style={{ borderTop: '1px solid #eee' }}>
             <LogoutButton onClick={handleLogout}>
               <span style={{marginRight:'5px'}}>Logout</span>
               <LogoutOutlined />
@@ -420,7 +533,23 @@ const RootLayout = () => {
         <MainContainer>
           <Outlet />
         </MainContainer>
-      
+
+        {/* History Sidebar Modal */}
+        <Modal
+          title="히스토리"
+          open={isHistorySidebarOpen}
+          onCancel={() => setIsHistorySidebarOpen(false)}
+          footer={null}
+          width={400}
+          className={finalCheckModalStyles.historySidebar}
+          style={{ top: 0, right: 0, position: 'fixed', height: '100vh', margin: 0 }}
+        >
+          <div className={finalCheckModalStyles.historyContent}>
+            {/* 여기에 히스토리 내용을 추가할 수 있습니다 */}
+            <p>최근 활동 내역이 여기에 표시됩니다.</p>
+          </div>
+        </Modal>
+
       </InnerContainer>
 
       {finalCheckModal && (
@@ -435,23 +564,26 @@ const RootLayout = () => {
             <div className={finalCheckModalStyles.modalButtonWrapper}>
               <button 
                 id={finalCheckModalStyles.confirmButton} 
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation(); // 이벤트 버블링 방지
                   console.log('로그아웃 확인 버튼 클릭됨');
                   setFinalCheckModal(false);
                   console.log('로그아웃 시도');
+                  
                   try {
-                    logout();
-                    console.log('로그아웃 함수 실행 완료');
+                    const success = await logout();
+                    console.log('로그아웃 함수 실행 완료:', success ? '성공' : '실패');
+                    
+                    if (success) {
+                      // 로그아웃 성공 시 로그인 페이지로 리다이렉트
+                      window.location.href = '/login';
+                    } else {
+                      message.error('로그아웃 처리 중 오류가 발생했습니다.');
+                    }
                   } catch (error) {
                     console.error('로그아웃 중 오류 발생:', error);
+                    message.error('로그아웃 처리 중 오류가 발생했습니다.');
                   }
-                  
-                  // 리다이렉트 전에 충분한 시간을 두어 로그가 표시되도록 함
-                  setTimeout(() => {
-                    console.log('로그인 페이지로 리다이렉트 시작');
-                    window.location.href = '/login';
-                  }, 1500);
                 }}
               >확인</button>
               <button id={finalCheckModalStyles.cancelButton} onClick={() => {setFinalCheckModal(false)}}>취소</button>
@@ -473,11 +605,36 @@ const RootLayout = () => {
             <div className={styles.modalButtonWrapper}>
               <button
                 id={styles.confirmButton}
-                onClick={() => {
-                  setProjectList(prev => prev.filter(p => p.id !== projectToDeleteId));
-                  setProjectToDeleteId(null); // 초기화
-                  setFinalRemoveCheckModal(false);
-                  navigate('/dashboard');
+                onClick={async () => {
+                  console.log('[RootLayout] 프로젝트 삭제 시작:', projectToDeleteId);
+                  const success = await deleteProject(projectToDeleteId);
+                  
+                  if (success) {
+                    // 즉시 UI에서 프로젝트 제거
+                    setProjectList(prev => prev.filter(p => p.project_id !== projectToDeleteId));
+                    console.log('[RootLayout] 프로젝트 목록에서 제거됨:', projectToDeleteId);
+                    
+                    // 성공 메시지 표시
+                    message.success('프로젝트가 성공적으로 삭제되었습니다.');
+                    
+                    // 상태 초기화
+                    setProjectToDeleteId(null);
+                    setFinalRemoveCheckModal(false);
+                    
+                    // 대시보드로 이동
+                    navigate('/dashboard');
+                    
+                    // 백그라운드에서 서버 목록 갱신 (UI는 이미 업데이트됨)
+                    setTimeout(() => {
+                      fetchProjectsFromServer();
+                    }, 100);
+                  } else {
+                    console.error('[RootLayout] 프로젝트 삭제 실패');
+                    message.error('프로젝트 삭제에 실패했습니다.');
+                    // 삭제 실패 시 모달만 닫기
+                    setProjectToDeleteId(null);
+                    setFinalRemoveCheckModal(false);
+                  }
                 }}
               >
                 확인
@@ -505,13 +662,17 @@ const RootLayout = () => {
               <label htmlFor="project_content">내용: </label> <br/>
               <textarea id="project_content" className={styles.textareaInput} placeholder="프로젝트 개요 입력" value={newProjectArticle} onChange={(e) => setNewProjectArticle(e.target.value)}></textarea> <br/>
 
-              <label htmlFor="project_writer">작성자: </label> <br/>
-              <input type="text" name="project_writer" id="project_writer" value={user?.username} readOnly/> <br/>
+     
 
               <div className={styles.modalButtonWrapper} style={{ marginTop: '1.5rem' }}>
                 <button
                   id={styles.confirmButton}
                   onClick={async () => {
+                    if (!newProjectName.trim() || !newProjectArticle.trim()) {
+                      setWarningModal(true);
+                      return;
+                    }
+
                     try {
                       console.log('[디버그] 프로젝트 생성 시작');
                       console.log('[디버그] 요청 데이터:', {
@@ -550,24 +711,31 @@ const RootLayout = () => {
                       if (data.success) {
                         console.log('[디버그] 프로젝트 생성 성공');
                         console.log('[디버그] 프로젝트 데이터:', data.project);
+                        // 로그 남기기
+                        const logContent = `${user.username} 님이 "${data.project.project_name}" 프로젝트를 생성했습니다.`;
 
-                        const newProject = {
-                          id: data.project.project_id.toString(),
-                          name: data.project.project_name,
-                          article: data.project.description,
-                          start_date: data.project.start_date || new Date().toISOString().split('T')[0],
-                          end_date: data.project.end_date
-                        };
+                        await fetch('/api/logs', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({
+                            project_id: data.project.project_id,
+                            user_id: user.user_id,
+                            content: logContent
+                          })
+                        });
+
+                        // 프로젝트 생성 후 목록 갱신
+                        await fetchProjectsFromServer();
                         
-                        console.log('[디버그] 새 프로젝트 객체:', newProject);
-
-                        setProjectList(prev => [...prev, newProject]);
                         setNewProjectName('');
+                        setNewProjectArticle('');
                         setcreatNewProjectModal(false);
 
+                        // 새로 생성된 프로젝트로 이동
                         navigate(`/project/${data.project.project_id}`, {
                           state: {
-                            project: newProject
+                            project: data.project
                           }
                         });
                       } else {
@@ -596,7 +764,24 @@ const RootLayout = () => {
           </div>
         )}
 
-        <ProfileSettingsModal
+      {warningModal && (
+          <div className={warningModalStyles.finalCheckModalOverlay}>
+            <div className={warningModalStyles.finalCheckModalContent}>
+              <h2>경고!</h2> <hr />
+  
+              <div className={warningModalStyles.main_text}>
+                <h4>제목과 내용을 입력해주세요.</h4>
+              </div>
+  
+              <div className={warningModalStyles.modalButtonWrapper}>
+                <button id={warningModalStyles.confirmButton} onClick={() => {setWarningModal(false);}}>확인</button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+      {/* Profile Settings Modal */}
+      <ProfileSettingsModal
           visible={profileModalVisible}
           onClose={() => setProfileModalVisible(false)}
           onSave={(newData) => {
@@ -605,6 +790,7 @@ const RootLayout = () => {
           }}
           user={user}
         />
+
     </OutterContainer>
   )
 }
@@ -657,7 +843,6 @@ const SHeader = styled(Header)`
   }
 `;
 
-{/*수정 됨*/}
 const SideNav = styled(Sider)`
   display: flex;
   flex-direction: column;
@@ -667,21 +852,6 @@ const SideNav = styled(Sider)`
   background-color: white;
   position: relative;
   border-right: 1px solid #454545;
-`;
-
-{/*수정 됨*/}
-const LogoutButton = styled.button`
-  width: 100%;
-  padding: 5px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: black;
-  font-weight: 500;
-  font-size:small;
 `;
 
 const SMenu = styled(Menu)`
@@ -694,6 +864,20 @@ const SMenu = styled(Menu)`
   & .bx {
     display: inline-block;
   }
+`;
+
+const LogoutButton = styled.button`
+  width: 100%;
+  padding: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: black;
+  font-weight: 500;
+  font-size: small;
 `;
 
 const MainContainer = styled.main`

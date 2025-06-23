@@ -24,6 +24,7 @@ const ProfileSettingsModal = ({ visible, onClose, onSave, user }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
 
   const handleVerifyPassword = async () => {
     try {
@@ -112,8 +113,23 @@ const ProfileSettingsModal = ({ visible, onClose, onSave, user }) => {
         <label htmlFor="name">이름</label>
         <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} readOnly={!isEditing} />
 
-        <label htmlFor="username">아이디</label>
-        <input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} readOnly={!isEditing} />
+        <div className={styles.labelRow}>
+          <label htmlFor="username">아이디</label>
+          {isEditing && usernameError && (
+            <span className={styles.inlineErrorText}>{usernameError}</span>
+          )}
+        </div>
+        <input
+          id="username"
+          type="text"
+          value={username}
+          readOnly
+          onClick={() => {
+            if (isEditing) {
+              setUsernameError('아이디는 변경할 수 없습니다.');
+            }
+          }}
+        />
 
         <label htmlFor="email">이메일</label>
         <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!isEditing} />

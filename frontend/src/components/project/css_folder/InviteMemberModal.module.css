@@ -121,6 +121,15 @@
   text-overflow: ellipsis;
 }
 
+/* 온라인/오프라인 상태에 따른 색상 */
+.memberSub[data-status='online'] {
+  color: #4caf50;
+}
+
+.memberSub[data-status='offline'] {
+  color: #b0b0b0;
+}
+
 .memberCaption {
   color: #b0b0b0;
   font-size: 13px;
